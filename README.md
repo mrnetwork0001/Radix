@@ -79,14 +79,17 @@ version, as a ready-to-open PR diff.
 | | |
 |---|---|
 | Graph | **502 nodes**, 1,975 edges (3,877 stored, inverse edges hidden from the API) |
-| Reverse closure, depth 6 | **5.4 ms** |
+| Reverse closure, depth 6 | **~6 ms warm** (4.8–7.0 ms over 6 runs; ~25 ms cold) |
 | Exposed services | **7 / 20 — 35%**, 3 of them tier-1 |
 | Also exposed | 24 packages, 4 of 10 lockfiles |
 | Infection paths returned | **82**, longest 7 hops |
 | Sister packages in the 48h window | **3** of `dev_alex`'s 5 |
+| Seed time | 502 nodes + 3,877 edges in **0.31 s**, 35 statements |
 
-Two services sit deliberately at depth 7 and 8, so raising the depth slider
-visibly finds more — the horizon is real, not cosmetic.
+Raising the depth slider to 8 finds **9** services rather than 7: two sit
+deliberately at depth 7 and 8, so the traversal horizon is real, not cosmetic.
+
+Reproduce it yourself with `make up && make seed && make verify`.
 
 ---
 
