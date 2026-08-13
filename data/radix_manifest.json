@@ -1,0 +1,173 @@
+{
+  "seed": 20260813,
+  "generated_for": "2026-08-13T09:00:00Z",
+  "node_counts": {
+    "Package": 390,
+    "Version": 60,
+    "Maintainer": 22,
+    "Service": 20,
+    "Lockfile": 10
+  },
+  "total_nodes": 502,
+  "edge_counts": {
+    "MAINTAINED_BY": 505,
+    "MAINTAINS": 505,
+    "RESOLVED_IN": 64,
+    "DEPENDS_ON": 1397,
+    "DEPENDED_ON_BY": 1397,
+    "TYPOSQUAT_OF": 9
+  },
+  "total_edges": 3877,
+  "api_visible_edges": 1975,
+  "incident": {
+    "package": "tanstack-query",
+    "package_id": 1000004,
+    "compromised_version": "4.28.0",
+    "compromised_version_id": 2000004,
+    "safe_version": "4.27.6",
+    "safe_version_id": 2000003,
+    "maintainer": "dev_alex",
+    "maintainer_id": 3000000,
+    "breach_at": "2026-08-11T03:14:00Z",
+    "window_hours": 48,
+    "sister_packages": [
+      {
+        "name": "tanstack-table",
+        "id": 1000000,
+        "published_within_window": true
+      },
+      {
+        "name": "tanstack-router",
+        "id": 1000001,
+        "published_within_window": true
+      },
+      {
+        "name": "tanstack-virtual",
+        "id": 1000002,
+        "published_within_window": true
+      },
+      {
+        "name": "tanstack-form",
+        "id": 1000003,
+        "published_within_window": false
+      },
+      {
+        "name": "tanstack-store",
+        "id": 1000005,
+        "published_within_window": false
+      }
+    ],
+    "typosquats": [
+      {
+        "name": "tanstackquery",
+        "id": 1000032,
+        "edit_distance": 1,
+        "similarity_score": 0.9286,
+        "attack_type": "separator-omission"
+      },
+      {
+        "name": "tanstack-querry",
+        "id": 1000033,
+        "edit_distance": 1,
+        "similarity_score": 0.9333,
+        "attack_type": "character-doubling"
+      },
+      {
+        "name": "tanstack-qeury",
+        "id": 1000034,
+        "edit_distance": 2,
+        "similarity_score": 0.8571,
+        "attack_type": "transposition"
+      },
+      {
+        "name": "tanstock-query",
+        "id": 1000035,
+        "edit_distance": 1,
+        "similarity_score": 0.9286,
+        "attack_type": "substitution"
+      },
+      {
+        "name": "t\u0430nstack-query",
+        "id": 1000036,
+        "edit_distance": 1,
+        "similarity_score": 0.9286,
+        "attack_type": "homoglyph"
+      },
+      {
+        "name": "tanstack-queryjs",
+        "id": 1000037,
+        "edit_distance": 2,
+        "similarity_score": 0.875,
+        "attack_type": "suffix-append"
+      }
+    ]
+  },
+  "blast_radius": {
+    "exposed_services": [
+      "admin-dashboard",
+      "analytics-pipeline",
+      "api-gateway",
+      "checkout-web",
+      "feature-flags",
+      "reporting-svc",
+      "user-profile-svc"
+    ],
+    "exposed_service_count": 7,
+    "total_services": 20,
+    "exposed_pct": 35.0,
+    "tier1_exposed": 3,
+    "exposed_at_depth_8": 9,
+    "exposed_lockfiles": [
+      "admin-dashboard/package-lock.json",
+      "api-gateway/package-lock.json",
+      "checkout-web/package-lock.json",
+      "reporting-svc/pnpm-lock.yaml"
+    ],
+    "affected_packages": 24,
+    "service_depths": {
+      "admin-dashboard": 2,
+      "analytics-pipeline": 5,
+      "api-gateway": 2,
+      "checkout-web": 1,
+      "feature-flags": 6,
+      "media-transcoder": 7,
+      "reporting-svc": 2,
+      "session-store": 8,
+      "user-profile-svc": 3
+    }
+  },
+  "service_ids": {
+    "auth-microservice": 4000000,
+    "payments-api": 4000001,
+    "checkout-web": 4000002,
+    "api-gateway": 4000003,
+    "admin-dashboard": 4000004,
+    "billing-engine": 4000005,
+    "user-profile-svc": 4000006,
+    "notification-worker": 4000007,
+    "search-indexer": 4000008,
+    "analytics-pipeline": 4000009,
+    "inventory-svc": 4000010,
+    "reporting-svc": 4000011,
+    "fraud-detector": 4000012,
+    "recommendation-svc": 4000013,
+    "email-relay": 4000014,
+    "media-transcoder": 4000015,
+    "feature-flags": 4000016,
+    "audit-log-svc": 4000017,
+    "session-store": 4000018,
+    "shipping-orchestrator": 4000019
+  },
+  "lockfile_ids": {
+    "checkout-web": 5000000,
+    "admin-dashboard": 5000001,
+    "api-gateway": 5000002,
+    "reporting-svc": 5000003,
+    "payments-api": 5000004,
+    "notification-worker": 5000005,
+    "auth-microservice": 5000006,
+    "search-indexer": 5000007,
+    "fraud-detector": 5000008,
+    "email-relay": 5000009
+  }
+}
