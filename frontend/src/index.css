@@ -1,0 +1,539 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =============================================================================
+   Radix design system — dark cyberpunk / glassmorphism
+   -----------------------------------------------------------------------------
+   Tokens live here and nowhere else. Tailwind reads the `*-rgb` channel triplets
+   (so `/<alpha-value>` modifiers work); the force-graph canvas cannot use
+   Tailwind at all, so src/lib/theme.ts mirrors the same hex literals for the
+   2D renderer. Changing a colour means changing it in both places — that pairing
+   is called out at the top of theme.ts.
+
+   Animation budget: every keyframe below animates only `transform` and
+   `opacity`, which the compositor can run off the main thread. That matters
+   because the dependency graph canvas is already saturating a core during
+   force simulation, and a layout-triggering animation would visibly stutter it.
+   ========================================================================== */
+
+@layer base {
+  :root {
+    /* --- Ground ------------------------------------------------------------ */
+    --bg: #0b0f17;
+    --bg-rgb: 11 15 23;
+    --bg-deep: #06090f;
+    --bg-deep-rgb: 6 9 15;
+
+    /* --- Accents ----------------------------------------------------------- */
+    --cyan: #22d3ee; /* Package · primary accent */
+    --cyan-rgb: 34 211 238;
+    --green: #4ade80; /* Service · safe / healthy */
+    --green-rgb: 74 222 128;
+    --red: #f43f5e; /* compromised · alert */
+    --red-rgb: 244 63 94;
+    --amber: #fbbf24; /* Lockfile · warning */
+    --amber-rgb: 251 191 36;
+    --violet: #a78bfa; /* Maintainer */
+    --violet-rgb: 167 139 250;
+    --slate: #94a3b8; /* Version · neutral structure */
+    --slate-rgb: 148 163 184;
+
+    /* --- Type -------------------------------------------------------------- */
+    --text: #e8eef7;
+    --text-rgb: 232 238 247;
+    --text-muted: #94a3b8;
+    --text-muted-rgb: 148 163 184;
+    --text-faint: #5b6779;
+    --text-faint-rgb: 91 103 121;
+
+    /* --- Glass ------------------------------------------------------------- */
+    /* Translucent white ~4% over the base, 1px hairline at ~10% white. */
+    --glass-fill: rgb(255 255 255 / 0.04);
+    --glass-fill-raised: rgb(255 255 255 / 0.065);
+    --glass-hairline: rgb(255 255 255 / 0.1);
+    --glass-hairline-strong: rgb(255 255 255 / 0.16);
+    --glass-blur: 18px;
+    --glass-radius: 14px;
+
+    /* Depth: a tight contact shadow, a wide ambient one, and an inset
+       top highlight that reads as light catching the pane's edge. */
+    --shadow-glass: 0 1px 0 0 rgb(255 255 255 / 0.06) inset, 0 8px 24px -8px rgb(0 0 0 / 0.7),
+      0 24px 64px -24px rgb(0 0 0 / 0.85);
+
+    /* --- Glows ------------------------------------------------------------- */
+    --glow-cyan: 0 0 0 1px rgb(var(--cyan-rgb) / 0.28), 0 0 18px -2px rgb(var(--cyan-rgb) / 0.42),
+      0 0 44px -8px rgb(var(--cyan-rgb) / 0.3);
+    --glow-green: 0 0 0 1px rgb(var(--green-rgb) / 0.28), 0 0 18px -2px rgb(var(--green-rgb) / 0.42),
+      0 0 44px -8px rgb(var(--green-rgb) / 0.3);
+    --glow-red: 0 0 0 1px rgb(var(--red-rgb) / 0.34), 0 0 20px -2px rgb(var(--red-rgb) / 0.5),
+      0 0 52px -8px rgb(var(--red-rgb) / 0.36);
+    --glow-amber: 0 0 0 1px rgb(var(--amber-rgb) / 0.28), 0 0 18px -2px rgb(var(--amber-rgb) / 0.42),
+      0 0 44px -8px rgb(var(--amber-rgb) / 0.3);
+    --glow-violet: 0 0 0 1px rgb(var(--violet-rgb) / 0.28), 0 0 18px -2px rgb(var(--violet-rgb) / 0.42),
+      0 0 44px -8px rgb(var(--violet-rgb) / 0.3);
+
+    /* --- Ambient chrome ---------------------------------------------------- */
+    --grid-size: 40px;
+    --grid-line: rgb(255 255 255 / 0.028);
+
+    --ring: rgb(var(--cyan-rgb) / 0.55);
+
+    color-scheme: dark;
+  }
+
+  * {
+    border-color: var(--glass-hairline);
+  }
+
+  html {
+    height: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100%;
+    margin: 0;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  /* Every numeral in the dashboard is a live metric that ticks; proportional
+     digits make counters jitter horizontally as they change. */
+  .tabular,
+  [data-stat],
+  table,
+  time,
+  code,
+  pre,
+  kbd {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  ::selection {
+    background: rgb(var(--cyan-rgb) / 0.28);
+    color: #fff;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(255 255 255 / 0.09);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--cyan-rgb) / 0.35);
+    background-clip: content-box;
+  }
+}
+
+/* =============================================================================
+   Ambient backdrop (markup lives in index.html so it paints before hydration)
+   ========================================================================== */
+
+@layer components {
+  .radix-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--bg-deep);
+  }
+
+  /* The grid is drawn one tile larger than the viewport and translated by
+     exactly one tile, so the drift loops seamlessly without repainting. */
+  .radix-backdrop__grid {
+    position: absolute;
+    inset: calc(var(--grid-size) * -1);
+    background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size);
+    will-change: transform;
+    animation: grid-drift 28s linear infinite;
+  }
+
+  .radix-backdrop__vignette {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(80rem 48rem at 50% -10%, rgb(var(--cyan-rgb) / 0.09), transparent 62%),
+      radial-gradient(52rem 40rem at 8% 108%, rgb(var(--violet-rgb) / 0.07), transparent 60%),
+      radial-gradient(60rem 40rem at 96% 96%, rgb(var(--green-rgb) / 0.05), transparent 60%),
+      radial-gradient(120% 100% at 50% 42%, transparent 34%, rgb(var(--bg-deep-rgb) / 0.85) 100%);
+  }
+
+  /* Radar sweep: a single conic wedge rotating about the viewport centre.
+     Sized to the viewport diagonal so the leading edge never clips a corner. */
+  .radix-backdrop__sweep {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 160vmax;
+    height: 160vmax;
+    margin: -80vmax 0 0 -80vmax;
+    border-radius: 50%;
+    opacity: 0.4;
+    background: conic-gradient(
+      from 0deg,
+      rgb(var(--cyan-rgb) / 0.085) 0deg,
+      rgb(var(--cyan-rgb) / 0.028) 14deg,
+      transparent 34deg,
+      transparent 360deg
+    );
+    mask-image: radial-gradient(closest-side, #000 30%, transparent 78%);
+    -webkit-mask-image: radial-gradient(closest-side, #000 30%, transparent 78%);
+    will-change: transform;
+    animation: scan-sweep 7s linear infinite;
+  }
+
+  /* --- Glass ------------------------------------------------------------- */
+
+  .glass {
+    position: relative;
+    background: var(--glass-fill);
+    backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--glass-radius);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .glass-raised {
+    background: var(--glass-fill-raised);
+    border-color: var(--glass-hairline-strong);
+  }
+
+  /* Diagonal sheen across the pane, brightest at the top-left corner. Sits on
+     ::before so it never intercepts pointer events on the card's contents. */
+  .glass-sheen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(135deg, rgb(255 255 255 / 0.07) 0%, transparent 42%);
+  }
+
+  .glass-interactive {
+    transition:
+      border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .glass-interactive:hover {
+    transform: translate3d(0, -1px, 0);
+    border-color: var(--glass-hairline-strong);
+  }
+
+  /* --- Glow ---------------------------------------------------------------
+     `.glow-*` composes with `.glass` — the glass shadow stack is re-declared
+     alongside the glow so the pane keeps its depth instead of losing it to the
+     override. */
+
+  .glow-cyan {
+    box-shadow: var(--shadow-glass), var(--glow-cyan);
+    border-color: rgb(var(--cyan-rgb) / 0.3);
+  }
+
+  .glow-green {
+    box-shadow: var(--shadow-glass), var(--glow-green);
+    border-color: rgb(var(--green-rgb) / 0.3);
+  }
+
+  .glow-red {
+    box-shadow: var(--shadow-glass), var(--glow-red);
+    border-color: rgb(var(--red-rgb) / 0.36);
+  }
+
+  .glow-amber {
+    box-shadow: var(--shadow-glass), var(--glow-amber);
+    border-color: rgb(var(--amber-rgb) / 0.3);
+  }
+
+  .glow-violet {
+    box-shadow: var(--shadow-glass), var(--glow-violet);
+    border-color: rgb(var(--violet-rgb) / 0.3);
+  }
+
+  /* Text glow, for headline numerals and the incident id. */
+  .glow-text-cyan {
+    text-shadow: 0 0 18px rgb(var(--cyan-rgb) / 0.55);
+  }
+  .glow-text-green {
+    text-shadow: 0 0 18px rgb(var(--green-rgb) / 0.55);
+  }
+  .glow-text-red {
+    text-shadow: 0 0 20px rgb(var(--red-rgb) / 0.6);
+  }
+
+  /* --- Compromised-node halo ---------------------------------------------
+     Two offset rings expanding out of a positioned parent. Because they scale
+     and fade (never resize), the halo costs one compositor layer, not a reflow
+     per frame — which is what keeps it smooth over the live canvas. */
+
+  .halo-alert {
+    position: relative;
+  }
+
+  .halo-alert::before,
+  .halo-alert::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    border: 1px solid rgb(var(--red-rgb) / 0.85);
+    pointer-events: none;
+    will-change: transform, opacity;
+    animation: pulse-alert 1.9s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .halo-alert::after {
+    animation-delay: 0.95s;
+  }
+
+  /* --- Animated infection edge -------------------------------------------
+     A dashed line that appears to flow toward the victim. Implemented as a
+     repeating gradient translated by exactly one dash period, so it loops
+     seamlessly on `transform` alone. SVG/canvas edges use the
+     `flow-dash-stroke` keyframe below instead. */
+
+  .flow-dash {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .flow-dash::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    /* Over-extended by two dash periods on each side so the translated strip
+       never exposes a bare edge mid-cycle. */
+    left: -48px;
+    right: -48px;
+    background-image: repeating-linear-gradient(
+      90deg,
+      currentColor 0 12px,
+      transparent 12px 24px
+    );
+    opacity: 0.75;
+    will-change: transform;
+    animation: flow-dash 0.7s linear infinite;
+  }
+
+  .flow-dash-reverse::after {
+    animation-direction: reverse;
+  }
+
+  /* --- Small parts --------------------------------------------------------- */
+
+  .hairline {
+    border: 1px solid var(--glass-hairline);
+  }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--glass-hairline) 18%,
+      var(--glass-hairline) 82%,
+      transparent
+    );
+  }
+
+  /* Uppercase micro-label used above every stat. */
+  .label-micro {
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .stat-numeral {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.1875rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--glass-hairline);
+    background: var(--glass-fill);
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* Live status dot — the breathing opacity signals "polling", not "stuck". */
+  .pip {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+    box-shadow: 0 0 10px 0 currentColor;
+    animation: breathe 2.6s ease-in-out infinite;
+  }
+
+  /* Skeleton sweep for panes waiting on a traversal. */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: rgb(255 255 255 / 0.04);
+    border-radius: 8px;
+  }
+
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.08), transparent);
+    will-change: transform;
+    animation: shimmer 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  .rise-in {
+    animation: rise-in 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Fade the bottom of a scrolling list into the pane instead of cutting it. */
+  .mask-fade-b {
+    mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
+    -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* =============================================================================
+   Keyframes — transform/opacity only (see the animation-budget note above).
+   `flow-dash-stroke` is the one exception: SVG dash motion has no transform
+   equivalent, so it animates `stroke-dashoffset` on a property that does not
+   trigger layout.
+   ========================================================================== */
+
+@keyframes pulse-alert {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+@keyframes scan-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes flow-dash {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    /* One full dash period (12px dash + 12px gap). */
+    transform: translate3d(-24px, 0, 0);
+  }
+}
+
+@keyframes flow-dash-stroke {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@keyframes grid-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    /* Exactly one grid tile, so the loop is invisible. */
+    transform: translate3d(calc(var(--grid-size) * -1), calc(var(--grid-size) * -1), 0);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    transform: translate3d(-100%, 0, 0);
+  }
+  to {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

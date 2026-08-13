@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0B0F17" />
+    <meta
+      name="description"
+      content="Radix — a graph-native software supply-chain security sentinel. Traverses the dependency graph in HydraDB to compute blast radius from a compromised package."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='7' r='4' fill='%23F43F5E'/%3E%3Ccircle cx='6' cy='24' r='3.5' fill='%2322D3EE'/%3E%3Ccircle cx='26' cy='24' r='3.5' fill='%234ADE80'/%3E%3Cpath d='M16 11 L6 21 M16 11 L26 21' stroke='%2322D3EE' stroke-width='2' stroke-linecap='round' opacity='.8'/%3E%3C/svg%3E"
+    />
+    <title>Radix — Supply-Chain Sentinel</title>
+  </head>
+  <body>
+    <!-- Ambient chrome painted behind the app: radial vignette, drifting grid,
+         and the radar sweep. Kept in the document (not React) so the first paint
+         has depth before the bundle hydrates. -->
+    <div class="radix-backdrop" aria-hidden="true">
+      <div class="radix-backdrop__grid"></div>
+      <div class="radix-backdrop__vignette"></div>
+      <div class="radix-backdrop__sweep"></div>
+    </div>
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
