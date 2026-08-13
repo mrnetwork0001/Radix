@@ -1,0 +1,39 @@
+# --- Local configuration ---------------------------------------------------
+# `.env` holds machine-specific overrides; `.env.example` is the tracked
+# template. `hydra/auth-token` is deliberately NOT ignored: docker-compose
+# bind-mounts it, and Docker silently creates a *directory* in its place if the
+# file is missing, so a fresh clone must come with it.
+.env
+.env.local
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Node / Vite -----------------------------------------------------------
+node_modules/
+dist/
+.vite/
+npm-debug.log*
+yarn-error.log*
+*.tsbuildinfo
+
+# --- HydraDB ---------------------------------------------------------------
+# Graph data lives in Docker named volumes (radix_store / radix_cache), but
+# ignore any stray host-side store in case someone switches to a bind mount.
+hydra/store/
+hydra/cache/
+# Scratch directory from the manual contract-probing session.
+.hydraprobe/
+
+# --- Editors / OS ----------------------------------------------------------
+.DS_Store
+.idea/
+.vscode/
+*.swp
