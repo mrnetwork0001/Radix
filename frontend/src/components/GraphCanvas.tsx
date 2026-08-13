@@ -860,7 +860,11 @@ export function GraphCanvas({
     <div
       ref={containerRef}
       className="relative h-full w-full overflow-hidden"
-      style={{ cursor: hoverId !== null ? 'pointer' : 'default' }}
+      // Sizing is also inline, not only via the Tailwind classes: the canvas is
+      // measured by a ResizeObserver, so if the utility CSS is missing for any
+      // reason the container collapses to a few pixels tall and the graph
+      // silently renders into a sliver instead of failing loudly.
+      style={{ width: '100%', height: '100%', cursor: hoverId !== null ? 'pointer' : 'default' }}
     >
       {hasData && ready ? (
         <ForceGraph2D<RadixNode, RadixLink>
