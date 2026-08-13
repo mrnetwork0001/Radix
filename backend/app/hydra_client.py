@@ -297,7 +297,10 @@ class QueryResult:
 #: dropped before the node dict reaches the API layer.
 _LABEL_PROPERTIES: dict[str, tuple[str, ...]] = {
     schema.PACKAGE: ("name", "ecosystem", "is_compromised", "risk_score", "downloads_weekly"),
-    schema.VERSION: ("name", "ecosystem", "semver", "published_at", "compromised_window"),
+    # `package_id` is the only reliable link back to the owning Package: a
+    # Version is named `<package>@<semver>`, so joining on `name` matches
+    # nothing. Version->Package joins depend on this being projected.
+    schema.VERSION: ("name", "ecosystem", "semver", "published_at", "compromised_window", "package_id"),
     schema.MAINTAINER: ("name", "username", "email", "key_fingerprint"),
     schema.SERVICE: ("name", "repo_url", "criticality"),
     schema.LOCKFILE: ("name", "filename", "commit_hash"),
@@ -793,22 +796,27 @@ class HydraClient:
         hydrated = self.get_nodes(ordered_ids)
 
         # Publication recency lives on Version nodes. One Version label scan,
-        # indexed client-side by (ecosystem, name) — cheaper and more robust
-        # than a per-package edge walk, and it works whichever way the seeder
-        # orients the Package/Version relationship.
+        # indexed client-side by the Version's `package_id` — cheaper and more
+        # robust than a per-package edge walk, and it works whichever way the
+        # seeder orients the Package/Version relationship.
+        #
+        # Keyed by package_id and NOT by name: a Version is named
+        # `<package>@<semver>`, so a name join silently matches nothing and
+        # every sister comes back unflagged.
         versions, version_latency = self._scan_label(schema.VERSION)
         latency_ms += version_latency
-        versions_by_package: dict[tuple[Any, Any], list[dict[str, Any]]] = {}
+        versions_by_package: dict[int, list[dict[str, Any]]] = {}
         for version in versions:
-            key = (version.get("ecosystem"), version.get("name"))
-            versions_by_package.setdefault(key, []).append(version)
+            owner = version.get("package_id")
+            if owner is None:
+                continue
+            versions_by_package.setdefault(int(owner), []).append(version)
 
         sisters: list[dict[str, Any]] = []
         flagged_count = 0
         for node_id in ordered_ids:
             node = dict(hydrated[node_id])
-            key = (node.get("ecosystem"), node.get("name"))
-            candidates = versions_by_package.get(key, [])
+            candidates = versions_by_package.get(node_id, [])
             in_window = any(bool(v.get("compromised_window")) for v in candidates)
             published_at = None
             for version in candidates:
@@ -1044,19 +1052,18 @@ class HydraClient:
     def get_versions_for_package(self, package_id: int) -> list[dict[str, Any]]:
         """Version nodes for a package, newest-looking first.
 
-        Matched on ``(ecosystem, name)`` from a Version label scan rather than
-        by edge, so it holds whichever direction the Package/Version
-        relationship is seeded in.
+        Joined on the Version's ``package_id`` property rather than by edge, so
+        it holds whichever direction the Package/Version relationship is
+        seeded in. Note a Version is *named* ``<package>@<semver>``, so joining
+        on ``name`` would never match the package it belongs to.
         """
-        package = self.get_node(int(package_id))
+        package_id = int(package_id)
+        package = self.get_node(package_id)
         if package is None:
             return []
         versions, _ = self._scan_label(schema.VERSION)
         matches = [
-            version
-            for version in versions
-            if version.get("name") == package.get("name")
-            and version.get("ecosystem") == package.get("ecosystem")
+            version for version in versions if version.get("package_id") == package_id
         ]
         matches.sort(key=lambda v: (v.get("published_at") or "", v.get("semver") or ""), reverse=True)
         return matches
