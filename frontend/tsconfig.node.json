@@ -9,8 +9,10 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "moduleDetection": "force",
-    "noEmit": true,
+    // A referenced project cannot disable emit (TS6310), and `composite`
+    // implies `declaration`, so declarations go to a throwaway directory.
     "composite": true,
+    "outDir": "./node_modules/.tmp/node-config",
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "strict": true,
     "noUnusedLocals": true,

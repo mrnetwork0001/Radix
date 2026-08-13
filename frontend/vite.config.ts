@@ -18,7 +18,10 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        // 127.0.0.1 rather than localhost: Node resolves localhost to ::1
+        // first, while uvicorn binds IPv4 only, so every proxied call would
+        // fail with ECONNREFUSED.
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
     },
