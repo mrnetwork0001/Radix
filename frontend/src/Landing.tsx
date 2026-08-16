@@ -38,7 +38,7 @@ export default function Landing({ onLaunch }: LandingProps) {
         <FinalCta onLaunch={onLaunch} />
       </main>
 
-      <Footer />
+      <Footer onLaunch={onLaunch} />
     </div>
   );
 }
@@ -329,7 +329,7 @@ const FEATURES = [
 
 function Features() {
   return (
-    <section aria-label="Capabilities" className="pb-20">
+    <section id="features" aria-label="Capabilities" className="scroll-mt-24 pb-20">
       <SectionHeading
         kicker="what it does"
         title="Four questions, one graph"
@@ -366,7 +366,7 @@ function Features() {
 
 function GraphNotVector() {
   return (
-    <section aria-label="Why a graph database" className="pb-20">
+    <section id="why-hydradb" aria-label="Why a graph database" className="scroll-mt-24 pb-20">
       <SectionHeading
         kicker="why HydraDB"
         title="Reachability is not similarity"
@@ -435,7 +435,7 @@ const STEPS = [
 
 function HowItWorks() {
   return (
-    <section aria-label="How it works" className="pb-20">
+    <section id="how-it-works" aria-label="How it works" className="scroll-mt-24 pb-20">
       <SectionHeading kicker="how it works" title="Ingest → traverse → remediate" />
       <div className="grid gap-4 lg:grid-cols-3">
         {STEPS.map((s) => (
@@ -493,27 +493,110 @@ function FinalCta({ onLaunch }: { onLaunch: () => void }) {
   );
 }
 
-function Footer() {
+interface FooterLink {
+  label: string;
+  href: string;
+  external?: boolean;
+}
+
+/**
+ * Column contents kept honest: Product links only to things on this page or in
+ * the console, Ecosystem only to services Radix actually consumes, Resources
+ * only to documents that exist in the repo.
+ */
+const FOOTER_COLUMNS: ReadonlyArray<{ heading: string; links: readonly FooterLink[] }> = [
+  {
+    heading: 'Product',
+    links: [
+      { label: 'Console', href: '/app' },
+      { label: 'Capabilities', href: '#features' },
+      { label: 'Why HydraDB', href: '#why-hydradb' },
+      { label: 'How It Works', href: '#how-it-works' },
+    ],
+  },
+  {
+    heading: 'Ecosystem',
+    links: [
+      { label: 'HydraDB', href: 'https://github.com/hydra-db/hydradb', external: true },
+      { label: 'OSV.dev Advisories', href: 'https://osv.dev', external: true },
+      { label: 'npm Registry', href: 'https://registry.npmjs.org', external: true },
+      { label: 'Hack Hydra 2026', href: 'https://hackhydra.hydradb.com', external: true },
+    ],
+  },
+  {
+    heading: 'Resources',
+    links: [
+      { label: 'GitHub', href: GITHUB_URL, external: true },
+      { label: 'Quickstart', href: `${GITHUB_URL}#quickstart`, external: true },
+      { label: 'Engine Contract', href: `${GITHUB_URL}/blob/main/docs/HYDRADB_CONTRACT.md`, external: true },
+      { label: 'API Reference', href: `${GITHUB_URL}/blob/main/docs/API_CONTRACT.md`, external: true },
+      { label: 'Deploy Guide', href: `${GITHUB_URL}/blob/main/deploy/README.md`, external: true },
+    ],
+  },
+];
+
+function Footer({ onLaunch }: { onLaunch: () => void }) {
   return (
-    <footer className="border-t border-white/5">
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8">
-        <div className="flex items-center gap-3">
-          <Wordmark className="h-4" />
-          <span className="label-micro text-ink-faint">supply chain sentinel</span>
+    <footer className="border-t border-white/5 bg-deep/40">
+      <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 py-12 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
+        {/* Brand block */}
+        <div className="sm:col-span-2 lg:col-span-1">
+          <Wordmark className="h-5" />
+          <p className="mt-5 max-w-sm text-sm leading-relaxed text-ink-muted">
+            Graph-native supply-chain sentinel on HydraDB. Reverse dependency
+            closure, maintainer co-authorship risk, typosquat proximity and
+            one-click lockfile remediation — computed in milliseconds, from
+            your own lockfiles.
+          </p>
+          <div className="mt-6">
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Radix on GitHub"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-ink-muted transition-colors duration-200 hover:border-white/25 hover:text-slate-200"
+            >
+              <GitHubGlyph className="h-4 w-4" />
+            </a>
+          </div>
         </div>
-        <div className="flex items-center gap-5 text-xs text-ink-muted">
-          <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="hover:text-slate-200">
-            GitHub
-          </a>
-          <a
-            href="https://github.com/hydra-db/hydradb"
-            target="_blank"
-            rel="noreferrer"
-            className="hover:text-slate-200"
-          >
-            HydraDB
-          </a>
-          <span className="text-ink-faint">MIT · Hack Hydra 2026</span>
+
+        {FOOTER_COLUMNS.map((col) => (
+          <nav key={col.heading} aria-label={col.heading}>
+            <div className="label-micro mb-5 text-ink-faint">{col.heading}</div>
+            <ul className="space-y-3.5">
+              {col.links.map((link) => (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    {...(link.external ? { target: '_blank', rel: 'noreferrer' } : {})}
+                    {...(link.href === '/app'
+                      ? {
+                          onClick: (e: { preventDefault: () => void }) => {
+                            e.preventDefault();
+                            onLaunch();
+                          },
+                        }
+                      : {})}
+                    className="font-mono text-sm text-ink-muted transition-colors duration-200 hover:text-cyan"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))}
+      </div>
+
+      <div className="border-t border-white/5">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-5">
+          <span className="text-xs text-ink-faint">
+            MIT License · built for Hack Hydra 2026
+          </span>
+          <span className="label-micro text-ink-faint">
+            blast radius, computed at traversal speed
+          </span>
         </div>
       </div>
     </footer>
