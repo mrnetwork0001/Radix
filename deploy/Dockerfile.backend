@@ -25,7 +25,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # `app` (FastAPI + ingest) and `sentinel` sit side by side under /app, so
 # `uvicorn app.main:app` and `python -m sentinel.watcher` both resolve from the
 # workdir. `scripts` rides along for seeding/ingesting via `docker compose run`.
-# Never copy backend/.venv or caches — only the packages themselves.
+# Never copy backend/.venv or caches - only the packages themselves.
 COPY backend/app ./app
 COPY sentinel ./sentinel
 COPY scripts ./scripts

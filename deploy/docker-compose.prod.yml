@@ -1,4 +1,4 @@
-# Radix — production stack for a single VPS: HydraDB + backend + sentinel +
+# Radix - production stack for a single VPS: HydraDB + backend + sentinel +
 # nginx-served frontend. Only port 80 (and optionally 443) faces the world;
 # HydraDB is reachable solely on the compose-internal network.
 #
@@ -9,7 +9,7 @@
 #     -f deploy/docker-compose.prod.yml --project-directory . up -d --build
 #
 # The hydra service definition is transcribed from the verified dev compose
-# file (docker-compose.yml) — see docs/HYDRADB_CONTRACT.md §1 for why the
+# file (docker-compose.yml) - see docs/HYDRADB_CONTRACT.md §1 for why the
 # odd-looking lines (user 0:0, RUST_MIN_STACK, per-path volumes) are required.
 
 name: radix-prod
@@ -18,13 +18,17 @@ services:
   hydra:
     image: ${HYDRA_IMAGE:-ghcr.io/hydra-db/hydradb:latest}
     restart: unless-stopped
+    # Hard ceiling so a heavy traversal can never starve the host's other
+    # services. HydraDB's own caches are configured well below this.
+    mem_limit: ${RADIX_HYDRA_MEM:-1536m}
+    cpus: ${RADIX_HYDRA_CPUS:-1.5}
 
     # The image declares USER 10001:10001, but named volumes are created
     # root-owned; as 10001 the node boots, serves /readyz, then silently fails
     # every heartbeat write. Root is required, not a shortcut.
     user: "0:0"
 
-    # No `ports:` — internal network only. Uncomment the loopback mappings
+    # No `ports:` - internal network only. Uncomment the loopback mappings
     # below ONLY if you run the sentinel bare via systemd on the same host
     # (deploy/radix-sentinel.service) and need HydraDB on 127.0.0.1.
     # ports:
@@ -91,6 +95,7 @@ services:
       context: .
       dockerfile: deploy/Dockerfile.backend
     image: radix-backend
+    mem_limit: ${RADIX_BACKEND_MEM:-512m}
     restart: unless-stopped
     depends_on:
       hydra:
@@ -98,7 +103,7 @@ services:
     environment:
       HYDRA_HTTP_URL: "http://hydra:8443"
       HYDRA_ADMIN_URL: "http://hydra:9090"
-      HYDRA_TOKEN: "${HYDRA_TOKEN:?set HYDRA_TOKEN in deploy/.env.prod — must match the auth-token file byte for byte}"
+      HYDRA_TOKEN: "${HYDRA_TOKEN:?set HYDRA_TOKEN in deploy/.env.prod - must match the auth-token file byte for byte}"
       HYDRA_NAMESPACE: "${HYDRA_NAMESPACE:-radix-live}"
     volumes:
       # Registry/OSV disk caches (and the committed data/ snapshot on first
@@ -123,6 +128,7 @@ services:
     # Same image as the backend; compose builds it once for `backend` and this
     # service just overrides the command.
     image: radix-backend
+    mem_limit: ${RADIX_SENTINEL_MEM:-512m}
     command: ["python", "-m", "sentinel.watcher"]
     restart: unless-stopped
     depends_on:
@@ -132,7 +138,7 @@ services:
         condition: service_started
     environment:
       HYDRA_HTTP_URL: "http://hydra:8443"
-      HYDRA_TOKEN: "${HYDRA_TOKEN:?set HYDRA_TOKEN in deploy/.env.prod — must match the auth-token file byte for byte}"
+      HYDRA_TOKEN: "${HYDRA_TOKEN:?set HYDRA_TOKEN in deploy/.env.prod - must match the auth-token file byte for byte}"
       HYDRA_NAMESPACE: "${HYDRA_NAMESPACE:-radix-live}"
       SENTINEL_INTERVAL: "${SENTINEL_INTERVAL:-900}"
       SENTINEL_REPOS: "${SENTINEL_REPOS:-}"
@@ -147,15 +153,19 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    # Loopback high port by default so Radix can land on a VPS that already
+    # serves other apps without contesting :80/:443. Point the host's existing
+    # reverse proxy (nginx/Caddy/Traefik) at this address - snippets in
+    # deploy/README.md. Only if the host has NO web server should you override
+    # RADIX_HTTP_BIND=0.0.0.0:80 in deploy/.env.prod.
     ports:
-      - "80:80"
-      # - "443:443"   # after adding TLS certs to nginx — or leave 80-only and
-      #                 put Caddy in front for automatic TLS (deploy/README.md)
+      - "${RADIX_HTTP_BIND:-127.0.0.1:8090}:80"
+    mem_limit: ${RADIX_FRONTEND_MEM:-128m}
 
 volumes:
   # Explicit names, distinct from the dev volumes (radix_store/radix_cache), so
-  # a prod stack accidentally started on a dev machine can never attach to —
-  # or corrupt — the seeded demo graph.
+  # a prod stack accidentally started on a dev machine can never attach to -
+  # or corrupt - the seeded demo graph.
   store:
     name: radix_live_store
   cache:

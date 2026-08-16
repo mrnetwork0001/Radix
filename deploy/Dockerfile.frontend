@@ -22,7 +22,7 @@ COPY frontend/index.html \
      ./
 COPY frontend/src ./src
 
-# `npm run build` = `tsc --noEmit && vite build` — the type check runs too.
+# `npm run build` = `tsc --noEmit && vite build` - the type check runs too.
 RUN npm run build
 
 # --- serve stage -----------------------------------------------------------

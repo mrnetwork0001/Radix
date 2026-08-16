@@ -1,10 +1,10 @@
-# Radix sentinel — bare-metal alternative to the compose `sentinel` service.
+# Radix sentinel - bare-metal alternative to the compose `sentinel` service.
 # Use ONE of the two, not both.
 #
 # Assumes the repo at /opt/radix with the backend venv populated:
 #   python3.12 -m venv /opt/radix/backend/.venv
 #   /opt/radix/backend/.venv/bin/pip install -r /opt/radix/backend/requirements.txt
-# and HydraDB reachable at the HYDRA_HTTP_URL in deploy/.env.prod — if HydraDB
+# and HydraDB reachable at the HYDRA_HTTP_URL in deploy/.env.prod - if HydraDB
 # runs in compose, uncomment the loopback `ports:` block on its service first.
 #
 # Install:
@@ -44,7 +44,7 @@ PrivateTmp=true
 ProtectSystem=full
 ProtectHome=true
 
-# Timestamped single-line stdout records — journald needs no extra formatting.
+# Timestamped single-line stdout records - journald needs no extra formatting.
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=radix-sentinel

@@ -23,7 +23,7 @@ cd /opt/radix
 
 ## 3. Create the auth token and .env.prod
 
-The repo ships a well-known dev token in `hydra/auth-token` — replace it.
+The repo ships a well-known dev token in `hydra/auth-token` - replace it.
 
 ```bash
 openssl rand -hex 32 > hydra/auth-token          # 64 chars, ≥32-byte minimum
@@ -73,10 +73,12 @@ read. Re-running either is idempotent.
 
 ## 6. Verify
 
+The stack binds to loopback port 8090 by default (see `RADIX_HTTP_BIND`):
+
 ```bash
-curl -s http://localhost/api/health
+curl -s http://127.0.0.1:8090/api/health
 # {"status":"ok","hydra_ready":true,...,"seeded":true,"packages":<n>}
-curl -sI http://localhost/ | head -1        # HTTP/1.1 200 OK
+curl -sI http://127.0.0.1:8090/ | head -1   # HTTP/1.1 200 OK
 ```
 
 ## 7. Logs
@@ -91,6 +93,54 @@ One line per cycle, e.g.
 Backend and hydra logs the same way (`logs -f backend`, `logs -f hydra`).
 Docker keeps them under `/var/lib/docker/containers/`; add a `logging:` block
 or configure the daemon's log rotation if the box is long-lived.
+
+## Coexisting with services already on the VPS
+
+Radix is built to land on a busy host without touching anything else:
+
+- **No public ports by default.** The only published port is the frontend on
+  `127.0.0.1:8090`; HydraDB and the backend are reachable solely on the
+  compose network. Nothing contests :80/:443. Check for conflicts anyway
+  before first start: `ss -ltnp | grep -E ':8090\b'` and pick another
+  `RADIX_HTTP_BIND` if taken.
+- **Own network, own volumes, own names.** The compose project is
+  `radix-prod`; volumes are `radix_live_*`. Existing containers, networks and
+  volumes are never referenced.
+- **Hard resource ceilings.** `RADIX_*_MEM` / `RADIX_HYDRA_CPUS` cap every
+  container (defaults total ~2.7GB); a runaway traversal gets OOM-killed and
+  restarted instead of starving neighbours.
+
+Expose it through the reverse proxy you already run - one of:
+
+**nginx** (subdomain):
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name radix.example.com;
+    # ... your existing ssl_certificate directives ...
+    location / {
+        proxy_pass http://127.0.0.1:8090;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+**Caddy** (one line in the existing Caddyfile):
+
+```
+radix.example.com {
+    reverse_proxy 127.0.0.1:8090
+}
+```
+
+**Traefik**: attach a router for `radix.example.com` to a service pointing at
+`http://127.0.0.1:8090`, or publish the frontend onto the Traefik docker
+network instead of a host port.
+
+Only on a host with no web server at all, set `RADIX_HTTP_BIND=0.0.0.0:80`
+in `deploy/.env.prod`.
 
 ## Optional: TLS with Caddy
 
