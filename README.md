@@ -60,9 +60,9 @@ Everything below is from verified runs, reproducible with the commands shown.
 | Graph | **502 nodes**, 3,877 edges (1,975 API-visible; inverse edges are internal) |
 | Seed time | **0.31 s** on the wire, 35 statements, idempotent |
 | Reverse closure + version-exact refinement, depth 6 | **~17 ms warm** on the live deployment (15.2-21.4 ms over 6 runs) |
-| Blast radius | **7 / 20 services — 35%**, 3 tier-1, 4 / 10 lockfiles, 24 packages |
-| Infection paths | **82**, longest 7 hops; depth 8 finds 9 services — the horizon is real |
-| Version-exact pruning | 2 direct dependents excluded (`~4.27.0` cannot resolve `4.28.0`) |
+| Blast radius | **7 / 20 services — 35%**, 3 tier-1, 4 / 10 lockfiles, 22 packages |
+| Infection paths | **80**, longest 7 hops; depth 8 finds 9 services — the horizon is real |
+| Version-exact pruning | 2 direct dependents excluded: `vue-query-shim` and `svelte-query-shim` pin `~4.27.0`, which cannot resolve `4.28.0` |
 | Maintainer sentinel | 3 of 5 sister packages flagged inside the 48h window |
 
 ### Real data (`make ingest` — a stale-but-real dependency tree)
@@ -74,6 +74,15 @@ Everything below is from verified runs, reproducible with the commands shown.
 | The precision story | A `debug` breach: package-level closure says **100% of services exposed**; version-exact says **0%** — the tree pins the 2.x/3.x era and the real malicious release was `4.4.2` (auto-derived from the MAL advisory). Named evidence: `express=2.6.9`, `mocha=3.2.6`, … |
 | Remediation | Dry-run PR: branch `radix/pin-lodash-4.17.21`, lockfile regenerated with genuine `sha512-` registry hashes, in **1.4 s** |
 | Sentinel sweep | 226 packages × 159 advisories in **2.6 s** per cycle |
+
+Check any of it against the live deployment:
+
+```bash
+curl -s https://www.useradix.xyz/api/health
+curl -s -X POST https://www.useradix.xyz/api/simulate-breach \
+  -H 'Content-Type: application/json' \
+  -d '{"package_name":"tanstack-query","depth":6}'
+```
 
 That 100% → 0% flip is the point of the whole tool: reachability finds the
 worst case fast, evidence trims it to the truth, and both numbers are shown so
