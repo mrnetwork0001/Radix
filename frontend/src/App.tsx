@@ -14,6 +14,7 @@ import { ControlDock } from './components/ControlDock';
 import { GraphCanvas } from './components/GraphCanvas';
 import { NodeInspector } from './components/NodeInspector';
 import { PatchModal } from './components/PatchModal';
+import { RepoIngest } from './components/RepoIngest';
 import { ThreatRadarHeader } from './components/ThreatRadarHeader';
 import { useBreachSimulation } from './hooks/useBreachSimulation';
 import { useGraphData } from './hooks/useGraphData';
@@ -22,6 +23,7 @@ import type {
   GenerateFixResponse,
   GraphNode,
   HealthResponse,
+  OpenPrResponse,
   TyposquatCandidate,
 } from './lib/types';
 
@@ -36,6 +38,8 @@ export default function App() {
   const [patch, setPatch] = useState<GenerateFixResponse | null>(null);
   const [patchOpen, setPatchOpen] = useState(false);
   const [patchLoading, setPatchLoading] = useState(false);
+  const [prLoading, setPrLoading] = useState(false);
+  const [prResult, setPrResult] = useState<OpenPrResponse | null>(null);
   const [standaloneSquats, setStandaloneSquats] = useState<TyposquatCandidate[] | null>(null);
 
   const graph = useGraphData();
@@ -174,6 +178,47 @@ export default function App() {
     [breach.result, closure],
   );
 
+  const handleOpenPr = useCallback(async () => {
+    if (!patch || patch.patches.length === 0) return;
+    // The modal's first patch names the service; resolve it to a vertex id.
+    const first = patch.patches[0];
+    if (!first) return;
+    const service = (graph.data?.nodes ?? []).find(
+      (n) => n.label === 'Service' && n.name === first.service,
+    );
+    const packageId = closure?.root.id ?? breachTarget?.id;
+    if (!service || packageId === undefined) return;
+
+    setPrLoading(true);
+    try {
+      const result = await api.openPr({
+        package_id: packageId,
+        service_id: service.id,
+        safe_version: patch.safe_version,
+        ...(breach.result?.compromised_version
+          ? { bad_version: breach.result.compromised_version }
+          : {}),
+        dry_run: true,
+      });
+      setPrResult(result);
+    } catch (error) {
+      if (!isAbortError(error)) {
+        setPrResult({
+          mode: 'dry-run',
+          repo: '',
+          branch: '',
+          base: '',
+          diff: '',
+          overrides: {},
+          regenerated: false,
+          message: error instanceof Error ? error.message : 'open-pr failed',
+        });
+      }
+    } finally {
+      setPrLoading(false);
+    }
+  }, [patch, graph.data, closure, breach.result, breachTarget]);
+
   // --- Ad-hoc typosquat lookup -------------------------------------------
   // Only when there is no incident on screen; during a breach the response
   // already carries the epicentre's neighbours.
@@ -239,7 +284,14 @@ export default function App() {
             />
           </div>
           <div className="pointer-events-auto">
-            <BlastRadiusGauge blastRadius={blastRadius} loading={breach.isLoading} />
+            <RepoIngest onIngested={() => void graph.refetch()} />
+          </div>
+          <div className="pointer-events-auto">
+            <BlastRadiusGauge
+              blastRadius={blastRadius}
+              loading={breach.isLoading}
+              precision={closure?.precision ?? null}
+            />
           </div>
         </div>
 
@@ -260,7 +312,11 @@ export default function App() {
         onClose={() => {
           setPatchOpen(false);
           setPatch(null);
+          setPrResult(null);
         }}
+        onOpenPr={() => void handleOpenPr()}
+        prLoading={prLoading}
+        prResult={prResult}
       />
     </div>
   );

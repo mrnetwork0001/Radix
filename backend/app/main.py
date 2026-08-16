@@ -28,8 +28,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, model_validator
 
-from . import analytics, remediation, schema
+from . import analytics, closure_precision, remediation, schema
 from .hydra_client import MAX_DEPTH, HydraClient, HydraQueryError, HydraUnavailableError
+from .ingest_jobs import IngestJobStore, JobBusyError
+from .pr_engine import PrEngineError, open_pr as run_open_pr
 
 logger = logging.getLogger("radix.api")
 
@@ -201,15 +203,40 @@ def _closure_with_blast(
 
 
 def _compromised_version(
-    versions: list[dict[str, Any]], requested: str | None
+    versions: list[dict[str, Any]],
+    requested: str | None,
+    package: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
-    """The version under investigation: the caller's, else the first in-window one."""
+    """The version under investigation.
+
+    Resolution order: the caller's explicit version; then the package's
+    recorded MALICIOUS releases (`mal_versions`, written from MAL advisories at
+    ingest time); then the earliest windowed release. The middle tier is what
+    separates the compromise (debug 4.4.2) from an old vulnerability window
+    (debug <=3.2.6) - the two produce opposite blast radii under version-exact
+    pruning.
+    """
     if requested:
         for version in versions:
             if str(version.get("semver")) == requested:
                 return version
         # An unrecorded version is still a legitimate thing to simulate.
         return {"semver": requested, "compromised_window": True}
+
+    mal_raw = str((package or {}).get("mal_versions") or "")
+    mal = [v for v in mal_raw.split(",") if v]
+    if mal:
+        try:
+            from . import semver_npm
+
+            chosen = semver_npm.max_satisfying(mal, "*") or mal[-1]
+        except Exception:  # pragma: no cover - ordering nicety only
+            chosen = mal[-1]
+        for version in versions:
+            if str(version.get("semver")) == chosen:
+                return version
+        return {"semver": chosen, "compromised_window": True}
+
     windowed = [v for v in versions if v.get("compromised_window")]
     windowed.sort(key=lambda v: str(v.get("published_at") or ""))
     return windowed[0] if windowed else (versions[0] if versions else None)
@@ -271,7 +298,16 @@ def closure(
     if client.get_node(package_id) is None:
         raise HTTPException(status_code=404, detail=f"no node with id {package_id}")
     result, _fleet = _closure_with_blast(client, package_id, depth)
-    return result
+
+    # Version-exact refinement: the traversal is package-level; prune it with
+    # the semver evidence. The bad version is the earliest windowed release,
+    # same convention as remediation.
+    versions, elapsed = remediation.versions_for_package(client, package_id)
+    result["latency_ms"] = round(float(result["latency_ms"]) + elapsed, 3)
+    package = client.get_node(package_id) or {}
+    chosen = _compromised_version(versions, None, package)
+    bad_version = str(chosen.get("semver")) if chosen and chosen.get("compromised_window") else None
+    return closure_precision.refine(client, result, bad_version)
 
 
 @app.post("/api/simulate-breach")
@@ -284,11 +320,18 @@ def simulate_breach(
 
     closure_result, fleet = _closure_with_blast(client, package_id, request.depth)
     latency_ms = float(closure_result["latency_ms"])
-    blast = closure_result["blast_radius"]
 
     versions, elapsed = remediation.versions_for_package(client, package_id)
     latency_ms += elapsed
-    compromised_version = _compromised_version(versions, request.version)
+    compromised_version = _compromised_version(versions, request.version, package)
+
+    # Version-exact refinement must run before anything reads the blast
+    # radius: the timeline, risk profile and headline numbers all describe the
+    # pruned closure, not the package-level over-approximation.
+    closure_result = closure_precision.refine(
+        client, closure_result, (compromised_version or {}).get("semver")
+    )
+    blast = closure_result["blast_radius"]
 
     maintainer_id, elapsed = analytics.primary_maintainer_id(client, package_id)
     latency_ms += elapsed
@@ -423,3 +466,116 @@ def generate_fix(
         # the reason string explains it and the UI shows it as such.
         logger.info("no safe rollback target for package %s: %s", package_id, fix.get("reason"))
     return fix
+
+
+# ---------------------------------------------------------------------------
+# POST /api/open-pr - a real remediation branch, not a rendered preview
+# ---------------------------------------------------------------------------
+
+
+class OpenPrRequest(BaseModel):
+    """``POST /api/open-pr``. The service names the repository receiving the branch."""
+
+    package_id: int = Field(ge=0)
+    service_id: int = Field(ge=0)
+    bad_version: str | None = Field(default=None, max_length=64)
+    safe_version: str | None = Field(default=None, max_length=64)
+    dry_run: bool = True
+
+
+@app.post("/api/open-pr")
+def open_pr_route(
+    request: OpenPrRequest, client: HydraClient = Depends(get_client)
+) -> dict[str, Any]:
+    package = client.get_node(request.package_id)
+    if package is None or package.get("label") != schema.PACKAGE:
+        raise HTTPException(status_code=404, detail=f"no package with id {request.package_id}")
+    service = client.get_node(request.service_id)
+    if service is None or service.get("label") != schema.SERVICE:
+        raise HTTPException(status_code=404, detail=f"no service with id {request.service_id}")
+
+    repo_target = str(service.get("repo_url") or "").strip()
+    if not repo_target:
+        raise HTTPException(
+            status_code=422,
+            detail=f"service {service.get('name')!r} has no repository on record; "
+            "re-ingest it from a git URL or local path",
+        )
+    # The registry stores host/org/repo without a scheme; git needs one.
+    if repo_target.startswith("github.com/"):
+        repo_target = f"https://{repo_target}"
+
+    safe_version = request.safe_version
+    bad_version = request.bad_version
+    if safe_version is None:
+        versions, _ = remediation.versions_for_package(client, int(package["id"]))
+        if bad_version is None:
+            windowed = sorted(
+                (v for v in versions if v.get("compromised_window")),
+                key=lambda v: str(v.get("published_at") or ""),
+            )
+            bad_version = str(windowed[0].get("semver")) if windowed else None
+        safe, reason = remediation.select_safe_version(versions, str(bad_version or ""))
+        if not safe:
+            raise HTTPException(status_code=422, detail=f"no safe version to pin: {reason}")
+        safe_version = str(safe.get("semver"))
+
+    token = os.environ.get("GITHUB_TOKEN") or None
+    if not request.dry_run and not token:
+        raise HTTPException(
+            status_code=400,
+            detail="pushing requires GITHUB_TOKEN on the backend; "
+            "re-run with dry_run=true or configure the token",
+        )
+
+    try:
+        return run_open_pr(
+            repo_target=repo_target,
+            package_name=str(package.get("name")),
+            safe_version=safe_version,
+            bad_version=bad_version,
+            service_name=str(service.get("name")),
+            dry_run=request.dry_run,
+            github_token=token,
+        )
+    except PrEngineError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+# ---------------------------------------------------------------------------
+# POST /api/ingest + GET /api/ingest/{job_id} - repo submission from the UI
+# ---------------------------------------------------------------------------
+
+
+class IngestStartRequest(BaseModel):
+    target: str = Field(min_length=1, max_length=500)
+
+
+_ingest_jobs = IngestJobStore()
+
+
+@app.post("/api/ingest", status_code=202)
+def ingest_start(
+    request: IngestStartRequest, client: HydraClient = Depends(get_client)
+) -> dict[str, Any]:
+    """Ingest a repository into the namespace this backend serves.
+
+    The demo namespace is read-only by design, so against the default dev
+    backend this returns 409 with instructions rather than corrupting the
+    seeded world - run ``make live-backend`` for the real-data console.
+    """
+    try:
+        job_id = _ingest_jobs.start(request.target, client.config.namespace)
+    except JobBusyError as busy:
+        raise HTTPException(status_code=409, detail=str(busy)) from busy
+    except ValueError as invalid:
+        raise HTTPException(status_code=409, detail=str(invalid)) from invalid
+    return {"job_id": job_id}
+
+
+@app.get("/api/ingest/{job_id}")
+def ingest_status(job_id: str) -> dict[str, Any]:
+    job = _ingest_jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"unknown ingest job {job_id!r}")
+    return job

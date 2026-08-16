@@ -40,3 +40,6 @@ hydra/cache/
 
 # Network caches from real ingestion (registry docs, OSV advisories).
 data/cache/
+
+# Local PR-engine fixtures (scratch git repos, never tracked).
+.local-fixtures/
