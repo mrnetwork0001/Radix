@@ -27,7 +27,7 @@ export default function Landing({ onLaunch }: LandingProps) {
         Skip to the console
       </a>
 
-      <TopNav onLaunch={onLaunch} />
+      <TopNav />
 
       <main className="mx-auto w-full max-w-6xl px-6">
         <Hero onLaunch={onLaunch} />
@@ -45,31 +45,16 @@ export default function Landing({ onLaunch }: LandingProps) {
 
 /* ── Chrome ──────────────────────────────────────────────────────────────── */
 
-function TopNav({ onLaunch }: { onLaunch: () => void }) {
+function TopNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-white/5 bg-deep/70 backdrop-blur-md">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-6">
+      <div className="mx-auto flex h-14 w-full max-w-6xl items-center px-6">
         <a href="/" className="flex items-center gap-3" aria-label="Radix home">
           <Wordmark className="h-5" />
           <Badge accent="cyan" variant="outline" className="hidden sm:inline-flex">
             powered by HydraDB
           </Badge>
         </a>
-        <nav className="flex items-center gap-3">
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noreferrer"
-            className={cx(
-              'hidden items-center gap-2 rounded-lg border border-white/10 px-3 py-1.5 sm:flex',
-              'text-xs text-ink-muted transition-colors duration-200 hover:border-white/25 hover:text-slate-200',
-            )}
-          >
-            <GitHubGlyph className="h-3.5 w-3.5" />
-            GitHub
-          </a>
-          <LaunchButton onClick={onLaunch} size="sm" />
-        </nav>
       </div>
     </header>
   );
