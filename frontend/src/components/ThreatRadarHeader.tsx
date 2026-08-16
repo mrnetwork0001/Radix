@@ -11,6 +11,7 @@
 import { useMemo } from 'react';
 
 import { Badge, GlassCard, Stat, cx, formatNumber } from './ui';
+import { navigate } from '@/lib/router';
 import type { GraphStats, HealthResponse } from '@/lib/types';
 
 export interface ThreatRadarHeaderProps {
@@ -170,18 +171,34 @@ export function ThreatRadarHeader({
     >
       {/* --- Identity --------------------------------------------------- */}
       <div className="flex min-w-0 items-center gap-4">
-        <RadarSweep size={62} alerting={alerting} />
+        {/* The wordmark is the way back to the landing page — SPA-routed so
+            the console's state dies with the unmount, exactly like a reload. */}
+        <a
+          href="/"
+          aria-label="Back to the Radix landing page"
+          onClick={(event) => {
+            event.preventDefault();
+            navigate('/');
+          }}
+          className={cx(
+            'group -m-1 flex min-w-0 items-center gap-4 rounded-lg p-1',
+            'transition-opacity duration-200 hover:opacity-85 focus-visible:outline-none',
+          )}
+        >
+          <RadarSweep size={62} alerting={alerting} />
+
+          <h1
+            className={cx(
+              'bg-gradient-to-r from-cyan via-white to-violet bg-clip-text',
+              'text-[27px] font-bold leading-none tracking-[0.3em] text-transparent',
+            )}
+          >
+            RADIX
+          </h1>
+        </a>
 
         <div className="min-w-0">
           <div className="flex items-center gap-3">
-            <h1
-              className={cx(
-                'bg-gradient-to-r from-cyan via-white to-violet bg-clip-text',
-                'text-[27px] font-bold leading-none tracking-[0.3em] text-transparent',
-              )}
-            >
-              RADIX
-            </h1>
             <Badge accent={link.accent} variant="outline" pulse title={link.detail}>
               {link.text}
             </Badge>
