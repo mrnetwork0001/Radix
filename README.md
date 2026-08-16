@@ -240,6 +240,21 @@ docs/           HYDRADB_CONTRACT.md · API_CONTRACT.md
 docker-compose.yml · Makefile
 ```
 
+## Attribution
+
+Radix is built on open source and public data services:
+
+- **[HydraDB](https://github.com/hydra-db/hydradb)** - the graph engine every traversal runs on (Apache-2.0 per its repository)
+- **[OSV.dev](https://osv.dev)** - vulnerability and malicious-package advisories, including the OpenSSF malicious-packages corpus
+- **npm registry** (registry.npmjs.org, api.npmjs.org) - package metadata, publish timestamps and download counts
+- **[FastAPI](https://fastapi.tiangolo.com/)**, **[uvicorn](https://www.uvicorn.org/)**, **[pydantic](https://docs.pydantic.dev/)**, **[requests](https://requests.readthedocs.io/)**, **[PyYAML](https://pyyaml.org/)**, **[pytest](https://pytest.org)** - backend stack
+- **[React](https://react.dev/)**, **[Vite](https://vite.dev/)**, **[Tailwind CSS](https://tailwindcss.com/)**, **[react-force-graph](https://github.com/vasturiano/react-force-graph)**, **[d3-force](https://github.com/d3/d3-force)** - frontend stack
+- **[node-semver](https://github.com/npm/node-semver)** - used as the test oracle for the pure-Python semver engine (8,806 cross-checked cases)
+
+The TanStack worm scenario in the demo namespace is fictional, modelled on the
+real May 2026 TanStack npm compromise; the live namespace's findings come
+unmodified from OSV and the npm registry.
+
 ## License
 
 MIT.
