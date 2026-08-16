@@ -17,6 +17,7 @@ import {
   GlassCard,
   IconButton,
   MicroLabel,
+  Spinner,
   cx,
   useBodyScrollLock,
   useCopyToClipboard,
@@ -24,13 +25,23 @@ import {
   useEscapeKey,
   useFocusTrap,
 } from './ui';
-import type { FixPatch, GenerateFixResponse } from '@/lib/types';
+import type { FixPatch, GenerateFixResponse, OpenPrResponse } from '@/lib/types';
 
 export interface PatchModalProps {
   /** `null` until `POST /api/generate-fix` resolves. */
   patch: GenerateFixResponse | null;
   open: boolean;
   onClose: () => void;
+  /**
+   * Wire-up for `POST /api/open-pr`. All three props are optional so existing
+   * call sites render the modal exactly as before; the OPEN PR affordance and
+   * the result strip appear only when the console provides them.
+   */
+  onOpenPr?: () => void;
+  /** True while the open-pr request is in flight. */
+  prLoading?: boolean;
+  /** The engine's response once it lands; replaces the rendered diff. */
+  prResult?: OpenPrResponse | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -211,10 +222,48 @@ function CopyButton({
 }
 
 // ---------------------------------------------------------------------------
+// Open-PR result strip
+// ---------------------------------------------------------------------------
+
+function PrResultStrip({ result }: { result: OpenPrResponse }) {
+  const pushed = result.mode === 'pushed';
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5">
+      <Badge accent={pushed ? 'green' : 'amber'}>{pushed ? 'PUSHED' : 'DRY RUN'}</Badge>
+      <span className="text-xs text-ink">
+        <span className="label-micro mr-2">Branch</span>
+        <span className="break-all font-mono text-cyan">{result.branch}</span>
+      </span>
+      <span className="text-xs text-ink">
+        <span className="label-micro mr-2">Base</span>
+        <span className="font-mono text-ink-muted">{result.base}</span>
+      </span>
+      <span className="text-xs text-ink">
+        <span className="label-micro mr-2">Regenerated</span>
+        <span className={cx('font-mono', result.regenerated ? 'text-toxic' : 'text-amber')}>
+          {result.regenerated ? 'yes' : 'no'}
+        </span>
+      </span>
+      {result.pr_url ? (
+        <a
+          href={result.pr_url}
+          target="_blank"
+          rel="noreferrer"
+          className="break-all text-xs font-medium text-cyan underline decoration-cyan/40 underline-offset-2 transition-colors hover:text-ink"
+        >
+          {result.pr_url}
+        </a>
+      ) : null}
+      <span className="w-full text-2xs leading-relaxed text-ink-faint">{result.message}</span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Modal
 // ---------------------------------------------------------------------------
 
-export function PatchModal({ patch, open, onClose }: PatchModalProps) {
+export function PatchModal({ patch, open, onClose, onOpenPr, prLoading, prResult }: PatchModalProps) {
   const titleId = useId();
   const active = open && patch !== null;
 
@@ -328,6 +377,8 @@ export function PatchModal({ patch, open, onClose }: PatchModalProps) {
 
         {/* --- Body ------------------------------------------------------ */}
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
+          {prResult ? <PrResultStrip result={prResult} /> : null}
+
           {current ? (
             <>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
@@ -349,10 +400,16 @@ export function PatchModal({ patch, open, onClose }: PatchModalProps) {
 
               <section>
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <MicroLabel>Patch</MicroLabel>
-                  <CopyButton text={current.diff} label="the unified diff" />
+                  <MicroLabel>
+                    {prResult ? 'regenerated lockfile - registry integrity hashes' : 'Patch'}
+                  </MicroLabel>
+                  <CopyButton
+                    text={prResult ? prResult.diff : current.diff}
+                    label="the unified diff"
+                  />
                 </div>
-                <DiffView diff={current.diff} />
+                {/* The engine's diff is a real commit; it replaces the rendered preview. */}
+                <DiffView diff={prResult ? prResult.diff : current.diff} />
               </section>
 
               <section>
@@ -384,6 +441,26 @@ export function PatchModal({ patch, open, onClose }: PatchModalProps) {
           </span>
           <div className="flex items-center gap-2">
             <CopyButton text={patch.pr_body} label="the PR body" />
+            {onOpenPr ? (
+              <button
+                type="button"
+                onClick={onOpenPr}
+                disabled={prLoading === true}
+                aria-busy={prLoading === true}
+                className={cx(
+                  'inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-1.5 text-2xs font-semibold',
+                  'transition-all duration-200 ease-swift active:scale-95',
+                  'border-toxic/50 bg-toxic/10 text-toxic',
+                  'hover:border-toxic/70 hover:bg-toxic/15',
+                  prLoading === true && 'cursor-wait opacity-60',
+                )}
+              >
+                {prLoading === true ? (
+                  <Spinner size={12} accent="green" label="Opening pull request" />
+                ) : null}
+                {prLoading === true ? 'OPENING...' : 'OPEN PR (DRY RUN)'}
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onClose}
