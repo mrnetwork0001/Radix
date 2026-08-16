@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- The RadiatingGlyph from the Radix wordmark: a package radiating its
+       blast radius. Strokes and opacities are bumped slightly from the header
+       version so the rings survive 16px rendering. -->
+  <circle cx="12" cy="12" r="2.6" fill="#22D3EE"/>
+  <circle cx="12" cy="12" r="6.5" fill="none" stroke="#22D3EE" stroke-width="2" opacity="0.65"/>
+  <circle cx="12" cy="12" r="10" fill="none" stroke="#22D3EE" stroke-width="2" opacity="0.32"/>
+</svg>
