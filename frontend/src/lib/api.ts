@@ -14,6 +14,10 @@
  */
 
 import type {
+  IngestJob,
+  IngestStartRequest,
+  OpenPrRequest,
+  OpenPrResponse,
   ClosureResponse,
   FullGraphResponse,
   GenerateFixRequest,
@@ -340,6 +344,31 @@ export function generateFix(
   return postJson<GenerateFixResponse>('/generate-fix', payload, options);
 }
 
+
+/**
+ * Remediation with a real branch: clone, apply overrides, regenerate the
+ * lockfile, and (unless dry_run) push and open the PR. Long-running - the
+ * backend clones and runs npm - so the timeout is generous.
+ */
+export function openPr(payload: OpenPrRequest, options?: RequestOptions): Promise<OpenPrResponse> {
+  assertVertexId(payload.package_id, 'package_id');
+  assertVertexId(payload.service_id, 'service_id');
+  return postJson<OpenPrResponse>('/open-pr', payload, { timeoutMs: 180_000, ...options });
+}
+
+/** Kick off ingestion of a repository (local path or git URL). */
+export function startIngest(
+  payload: IngestStartRequest,
+  options?: RequestOptions,
+): Promise<{ job_id: string }> {
+  return postJson<{ job_id: string }>('/ingest', payload, options);
+}
+
+/** Poll one ingestion job. */
+export function getIngestJob(jobId: string, options?: RequestOptions): Promise<IngestJob> {
+  return getJson<IngestJob>(`/ingest/${encodeURIComponent(jobId)}`, options);
+}
+
 export const api = {
   getHealth,
   getHealthOrDegraded,
@@ -349,4 +378,7 @@ export const api = {
   getMaintainerRisk,
   getTyposquats,
   generateFix,
+  openPr,
+  startIngest,
+  getIngestJob,
 } as const;

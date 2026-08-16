@@ -176,6 +176,26 @@ export interface ClosureResponse {
    */
   paths: number[][];
   blast_radius: BlastRadius;
+  /**
+   * Version-exact refinement. The graph traversal is package-level and
+   * over-approximates; this records what the semver evidence then pruned:
+   * direct dependents whose constraint cannot resolve the compromised
+   * version, and lockfiles that pin a clean release. Absent on older
+   * responses, so treat as optional everywhere.
+   */
+  precision?: ClosurePrecision;
+}
+
+export interface ClosurePrecision {
+  mode: 'version' | 'package';
+  bad_version: string | null;
+  /** Direct dependents excluded because their range cannot resolve bad_version. */
+  excluded_direct: Array<{ id: number; name: string; constraint: string }>;
+  pruned_package_ids: number[];
+  pruned_service_ids: number[];
+  pruned_lockfile_ids: number[];
+  /** The pre-pruning numbers, kept for the on-screen comparison. */
+  package_level: { exposed_services: number; percentage: number };
 }
 
 // ---------------------------------------------------------------------------
@@ -275,3 +295,67 @@ export const isLockfileNode = (n: GraphNode): n is LockfileNode => n.label === '
 
 /** True only for a Package the backend has flagged. */
 export const isCompromised = (n: GraphNode): boolean => n.is_compromised === true;
+
+// ---------------------------------------------------------------------------
+// POST /api/open-pr - remediation with a real branch, not a rendered diff
+// ---------------------------------------------------------------------------
+
+export interface OpenPrRequest {
+  package_id: number;
+  /** The service whose repository receives the branch. */
+  service_id: number;
+  bad_version?: string;
+  safe_version?: string;
+  /**
+   * Default true. Dry-run does everything except push: clone, branch, apply
+   * overrides, regenerate the lockfile with real registry hashes. Setting
+   * false requires GITHUB_TOKEN on the backend.
+   */
+  dry_run?: boolean;
+}
+
+export interface OpenPrResponse {
+  mode: 'dry-run' | 'pushed';
+  repo: string;
+  branch: string;
+  base: string;
+  /** Real diff of the regenerated lockfile - integrity hashes from the registry. */
+  diff: string;
+  overrides: Record<string, string>;
+  /** Only when mode is "pushed". */
+  pr_url?: string;
+  /** True when npm regenerated the lockfile (vs. overrides-only). */
+  regenerated: boolean;
+  message: string;
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/ingest + GET /api/ingest/{job_id} - repo submission from the UI
+// ---------------------------------------------------------------------------
+
+export interface IngestStartRequest {
+  /** Local path or git URL. */
+  target: string;
+}
+
+export interface IngestJob {
+  job_id: string;
+  status: 'running' | 'done' | 'error';
+  /** Append-only progress lines, newest last. */
+  log: string[];
+  target: string;
+  /** Present when status is "done". */
+  report?: {
+    packages: number;
+    versions: number;
+    maintainers: number;
+    services: number;
+    lockfiles: number;
+    depends_on: number;
+    typosquats: number;
+    compromised_marked: number;
+    advisories: number;
+    malicious: number;
+  };
+  error?: string;
+}
