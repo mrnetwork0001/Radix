@@ -261,6 +261,22 @@ export default function App() {
       />
 
       <main className="relative flex-1 overflow-hidden">
+        {/* An unreachable API must not masquerade as eternal traversal:
+            without this, a frontend-only deployment (Vercel before the VPS
+            API exists) shows a loading skeleton forever and reads as broken. */}
+        {graph.error && !graph.data ? (
+          <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center p-6">
+            <div className="glass max-w-sm rounded-xl px-6 py-5 text-center">
+              <div className="label-micro mb-2 text-alert">console offline</div>
+              <p className="text-sm leading-relaxed text-ink-muted">
+                This deployment is not connected to a Radix API yet, so the
+                graph cannot load. Run <code className="font-mono text-xs text-cyan">make dev</code>{' '}
+                locally, or deploy the backend and point <code className="font-mono text-xs">/api</code> at it.
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         <GraphCanvas
           data={graph.data}
           infectedIds={breach.infectedIds}
