@@ -509,7 +509,6 @@ const FOOTER_COLUMNS: ReadonlyArray<{ heading: string; links: readonly FooterLin
     heading: 'Resources',
     links: [
       { label: 'GitHub', href: GITHUB_URL, external: true },
-      { label: 'Quickstart', href: `${GITHUB_URL}#quickstart`, external: true },
       { label: 'Engine Contract', href: `${GITHUB_URL}/blob/main/docs/HYDRADB_CONTRACT.md`, external: true },
       { label: 'API Reference', href: `${GITHUB_URL}/blob/main/docs/API_CONTRACT.md`, external: true },
       { label: 'Deploy Guide', href: `${GITHUB_URL}/blob/main/deploy/README.md`, external: true },
