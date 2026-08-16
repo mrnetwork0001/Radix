@@ -129,10 +129,14 @@ export function BlastRadiusGauge({
         </Badge>
       </div>
 
-      {/* --- Dial --------------------------------------------------------- */}
+      {/* --- Dial ---------------------------------------------------------
+          Rendered smaller while idle: a full-size empty dial is dead air, and
+          the ~28% shrink also gives the card a visible state change the
+          moment an incident starts. The transition is width/height, but it
+          fires once per incident, not per frame. */}
       <div
-        className="relative mx-auto"
-        style={{ width: size, height: size }}
+        className="relative mx-auto transition-[width,height] duration-300 ease-swift"
+        style={{ width: hasData ? size : Math.round(size * 0.72), height: hasData ? size : Math.round(size * 0.72) }}
         {...(hasData
           ? {
               role: 'meter' as const,

@@ -315,7 +315,18 @@ export function ThreatRadarHeader({
             accent="green"
             alarm={alerting}
             hairline={incidentActive}
-            caption={alerting ? 'active incident' : 'supply-chain'}
+            // "active incident" only while one is actually running; a flagged
+            // package at rest is a finding, not an incident - the CLOSURE tile
+            // next door says "awaiting incident", and the two must not conflict.
+            caption={
+              incidentActive
+                ? 'active incident'
+                : alerting
+                  ? alertCount === 1
+                    ? 'flagged package'
+                    : 'flagged packages'
+                  : 'supply-chain'
+            }
             className="min-w-[7.25rem]"
           />
         </div>
