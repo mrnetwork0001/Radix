@@ -21,7 +21,12 @@ import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO_ROOT / "backend"))
+# Repo layout puts the package under backend/; the container image flattens it
+# next to the scripts. Probe rather than assume, so both invocations work.
+for _candidate in (REPO_ROOT / "backend", REPO_ROOT):
+    if (_candidate / "app" / "schema.py").is_file():
+        sys.path.insert(0, str(_candidate))
+        break
 
 from app.hydra_client import HydraClient  # noqa: E402
 from app.ingest.lockfiles import discover_lockfiles  # noqa: E402  (re-exported check)

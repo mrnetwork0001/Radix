@@ -34,9 +34,16 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # The shared id space lives with the backend; the seeder must not reinvent it.
-_BACKEND = Path(__file__).resolve().parent.parent / "backend"
-if str(_BACKEND) not in sys.path:
-    sys.path.insert(0, str(_BACKEND))
+# Two layouts have to work: the repo checkout (<root>/backend/app) and the
+# container image, which flattens the package next to the scripts (/app/app).
+# Probing for schema.py rather than assuming keeps `python scripts/...` working
+# in both without a PYTHONPATH.
+_HERE = Path(__file__).resolve().parent
+for _candidate in (_HERE.parent / "backend", _HERE.parent):
+    if (_candidate / "app" / "schema.py").is_file():
+        if str(_candidate) not in sys.path:
+            sys.path.insert(0, str(_candidate))
+        break
 
 from app.schema import (  # noqa: E402
     DEPENDED_ON_BY,

@@ -125,8 +125,13 @@ services:
       start_period: 10s
 
   sentinel:
-    # Same image as the backend; compose builds it once for `backend` and this
-    # service just overrides the command.
+    # Same image as the backend, with the command overridden. The build block is
+    # repeated rather than inherited: without it compose tries to *pull*
+    # radix-backend before the backend service has built it, and reports a
+    # spurious "pull access denied" on first run. Same tag, so it builds once.
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.backend
     image: radix-backend
     mem_limit: ${RADIX_SENTINEL_MEM:-512m}
     command: ["python", "-m", "sentinel.watcher"]
