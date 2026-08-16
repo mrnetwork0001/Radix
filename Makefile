@@ -42,12 +42,22 @@ SEEDER       := $(RADIX_ROOT)/scripts/seed_ecosystem.py
 
 # The seeder and the backend read their HydraDB coordinates from the
 # environment, so hand them down instead of duplicating them per target.
-export HYDRA_HTTP_URL HYDRA_ADMIN_URL HYDRA_AUTH_TOKEN
+# HydraClient reads HYDRA_TOKEN specifically; alias it so a token override in
+# .env reaches Python instead of silently diverging from the curl targets.
+HYDRA_TOKEN ?= $(HYDRA_AUTH_TOKEN)
+export HYDRA_HTTP_URL HYDRA_ADMIN_URL HYDRA_AUTH_TOKEN HYDRA_TOKEN
 export HYDRA_NAMESPACE HYDRA_GRAPH_ID HYDRA_CELL_ID
 export BACKEND_HOST BACKEND_PORT FRONTEND_PORT
 
+# Namespace that holds real ingested data (the demo world stays in 'radix').
+# A sub-scope of the boot namespace: the auth token is prefix-scoped, so with
+# the dev container booted as 'radix', only 'radix' and 'radix/...' are
+# authorized. Production boots its own namespace (see deploy/).
+LIVE_NAMESPACE ?= radix/live
+
 .PHONY: help up wait-ready seed backend frontend dev down clean verify \
-        venv install install-backend install-frontend logs ps restart
+        venv install install-backend install-frontend logs ps restart \
+        ingest osv-sync sentinel live-backend
 
 help: ## Show this help
 	@printf '\nRadix — make targets\n\n'
@@ -136,6 +146,23 @@ frontend: install-frontend ## Run the Vite dev server
 
 dev: ## Everything: HydraDB, seed, then backend + frontend side by side
 	@"$(RADIX_ROOT)/scripts/dev.sh"
+
+# --- Real data -------------------------------------------------------------
+
+ingest: install-backend ## Ingest real repos: make ingest TARGETS="path-or-url ..."
+	@test -n "$(TARGETS)" || { printf 'usage: make ingest TARGETS="/path/to/repo https://github.com/org/repo"\n' >&2; exit 2; }
+	@$(MAKE) --no-print-directory wait-ready
+	@"$(VENV_PY)" "$(RADIX_ROOT)/scripts/ingest.py" --namespace "$(LIVE_NAMESPACE)" $(TARGETS)
+
+osv-sync: install-backend ## One advisory sweep over the live namespace
+	@HYDRA_NAMESPACE="$(LIVE_NAMESPACE)" "$(VENV_PY)" -m sentinel.watcher --once
+
+sentinel: install-backend ## Run the 24/7 advisory watcher in the foreground
+	@HYDRA_NAMESPACE="$(LIVE_NAMESPACE)" "$(VENV_PY)" -m sentinel.watcher
+
+live-backend: install-backend ## Backend pointed at real data instead of the demo world
+	@cd "$(BACKEND_DIR)" && HYDRA_NAMESPACE="$(LIVE_NAMESPACE)" "$(VENV)/bin/uvicorn" app.main:app \
+		--host "$(BACKEND_HOST)" --port "$(BACKEND_PORT)" --reload
 
 # --- Housekeeping ----------------------------------------------------------
 

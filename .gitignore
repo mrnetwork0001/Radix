@@ -37,3 +37,6 @@ hydra/cache/
 .idea/
 .vscode/
 *.swp
+
+# Network caches from real ingestion (registry docs, OSV advisories).
+data/cache/
