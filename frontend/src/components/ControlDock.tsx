@@ -40,6 +40,10 @@ const DEPTHS: readonly number[] = Array.from(
   (_, i) => MIN_DEPTH + i,
 );
 
+/** Why the traversal bound exists at all - surfaced as a tooltip, not body copy. */
+const DEPTH_TOOLTIP =
+  'HydraDB requires a finite maximum on variable-length traversal, so the closure walk is always bounded.';
+
 export function ControlDock({
   onSimulate,
   onReset,
@@ -63,13 +67,16 @@ export function ControlDock({
   );
 
   const busy = isSimulating;
+  // Long package names step down one size; `break-words` means even an
+  // unbroken scoped name wraps instead of ever truncating.
+  const targetSize = (targetName?.length ?? 0) > 18 ? 'text-xs' : 'text-sm';
 
   return (
     <GlassCard
       as="section"
       accent="red"
       raised
-      className={cx('flex flex-col gap-4 p-4', className)}
+      className={cx('flex flex-col gap-3 p-4', className)}
       aria-label="Simulation controls"
     >
       <div className="flex items-center justify-between gap-3">
@@ -87,7 +94,7 @@ export function ControlDock({
         aria-busy={busy}
         aria-label={`Simulate a supply-chain breach of ${targetName ?? 'the compromised package'}`}
         className={cx(
-          'group relative w-full overflow-hidden rounded-xl px-4 py-3.5 text-left',
+          'group relative w-full overflow-hidden rounded-xl px-4 py-3 text-left',
           'border border-alert/50 bg-gradient-to-br from-alert/25 via-alert/10 to-transparent',
           'shadow-glow-red transition-all duration-200 ease-swift',
           'hover:-translate-y-px hover:border-alert/80 hover:from-alert/35',
@@ -105,10 +112,10 @@ export function ControlDock({
           )}
         />
 
-        <span className="relative flex items-center gap-3">
+        <span className="relative flex items-start gap-3">
           <span
             className={cx(
-              'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+              'mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
               'border border-alert/50 bg-alert/15 text-alert',
               busy ? '' : 'halo-alert',
             )}
@@ -116,16 +123,20 @@ export function ControlDock({
             {busy ? <Spinner accent="red" size={16} label="Simulating breach" /> : <GlyphWorm />}
           </span>
 
-          <span className="min-w-0">
-            <span className="block truncate text-sm font-semibold tracking-wide text-alert glow-text-red">
-              {busy
-                ? 'SIMULATING BREACH…'
-                : targetName
-                  ? `SIMULATE BREACH: ${targetName.toUpperCase()}`
-                  : 'SIMULATE WORM ATTACK'}
+          <span className="min-w-0 flex-1">
+            <span className="block whitespace-nowrap text-xs font-semibold tracking-[0.14em] text-alert glow-text-red">
+              SIMULATE BREACH
             </span>
-            <span className="mt-0.5 block truncate text-2xs text-ink-muted">
-              inject compromised release → walk the reverse closure
+            <span
+              className={cx(
+                'mt-0.5 block break-words font-mono font-medium leading-snug text-ink',
+                targetSize,
+              )}
+            >
+              {targetName ?? 'awaiting target'}
+            </span>
+            <span className="mt-1 block whitespace-nowrap text-2xs text-ink-muted">
+              inject -&gt; walk reverse closure
             </span>
           </span>
         </span>
@@ -134,10 +145,10 @@ export function ControlDock({
       {/* --- Depth ------------------------------------------------------- */}
       <div>
         <div className="mb-2 flex items-baseline justify-between gap-3">
-          <label htmlFor={sliderId} className="label-micro cursor-pointer">
+          <label htmlFor={sliderId} className="label-micro cursor-help" title={DEPTH_TOOLTIP}>
             Closure Depth
           </label>
-          <span className="stat-numeral text-xs text-ink-muted">
+          <span className="stat-numeral whitespace-nowrap text-xs text-ink-muted">
             <span className="font-mono text-cyan">{`*1..${clamped}`}</span>
             <span className="ml-1.5 text-ink-faint">hops</span>
           </span>
@@ -194,12 +205,6 @@ export function ControlDock({
             </span>
           ))}
         </div>
-
-        {/* Why the bound exists at all - HydraDB rejects `*` and `*1..`. */}
-        <p className="mt-2 text-[10px] leading-relaxed text-ink-faint">
-          HydraDB requires a finite maximum on variable-length traversal, so the closure walk is
-          always bounded.
-        </p>
       </div>
 
       {/* --- Reset ------------------------------------------------------- */}
@@ -208,8 +213,8 @@ export function ControlDock({
         onClick={onReset}
         disabled={busy}
         className={cx(
-          'inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10',
-          'bg-white/[0.03] px-4 py-2.5 text-xs font-medium tracking-wide text-ink-muted',
+          'inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/10',
+          'bg-white/[0.03] px-4 py-2 text-xs font-medium tracking-wide text-ink-muted',
           'transition-all duration-200 ease-swift',
           'hover:border-white/25 hover:bg-white/[0.07] hover:text-ink active:scale-[0.99]',
           'disabled:pointer-events-none disabled:opacity-40',
@@ -221,13 +226,16 @@ export function ControlDock({
 
       {/* --- Status ------------------------------------------------------ */}
       <div className="rounded-lg border border-white/10 bg-black/25 px-3 py-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-start gap-2">
           <span
-            className={cx('pip shrink-0', busy ? 'text-alert' : status ? 'text-toxic' : 'text-steel')}
+            className={cx(
+              'pip mt-[5px] shrink-0',
+              busy ? 'text-alert' : status ? 'text-toxic' : 'text-steel',
+            )}
             aria-hidden="true"
           />
           <p
-            className="min-w-0 flex-1 truncate font-mono text-[11px] leading-5 text-ink-muted"
+            className="min-w-0 flex-1 break-words font-mono text-2xs text-ink-muted"
             role="status"
             aria-live="polite"
           >

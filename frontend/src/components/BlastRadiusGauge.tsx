@@ -7,6 +7,10 @@
  * units; the dash offset is then literally `100 - percentage`, with no arc-length
  * trigonometry. The sweep is driven by the same eased counter that prints the
  * numeral, so the arc and the digits can never disagree mid-animation.
+ *
+ * Before any closure exists the gauge shows a true empty state (dimmed track,
+ * no numbers) rather than a fake "0%": zero exposure is a real, meaningful
+ * result and must stay distinguishable from "nothing computed yet".
  */
 
 import { useMemo } from 'react';
@@ -56,6 +60,10 @@ function arcPath(radius: number, fromDeg: number, toDeg: number): string {
 const TRACK_PATH = arcPath(R, START_ANGLE, START_ANGLE + SWEEP);
 const TICKS = Array.from({ length: 11 }, (_, i) => i * 10);
 
+/** How the reach number is computed - surfaced as a tooltip on the card. */
+const METHOD_TOOLTIP =
+  'Reverse closure over the materialised DEPENDED_ON_BY edge - every service whose lockfile resolves the compromised package, at any depth.';
+
 interface Severity {
   accent: Accent;
   text: string;
@@ -77,6 +85,7 @@ export function BlastRadiusGauge({
   className,
 }: BlastRadiusGaugeProps) {
   const radius = blastRadius ?? null;
+  const hasData = radius !== null;
 
   const percentage = useMemo(() => {
     if (!radius) return 0;
@@ -102,16 +111,21 @@ export function BlastRadiusGauge({
   return (
     <GlassCard
       as="section"
-      accent={severity.accent}
-      glow={percentage > 0}
+      accent={hasData ? severity.accent : 'slate'}
+      glow={hasData && percentage > 0}
       raised
+      title={METHOD_TOOLTIP}
       className={cx('flex flex-col gap-3 p-4', className)}
       aria-label="Blast radius"
     >
       <div className="flex items-center justify-between gap-3">
         <MicroLabel>Blast Radius</MicroLabel>
-        <Badge accent={severity.accent} variant="outline" pulse={severity.accent === 'red'}>
-          {loading ? 'COMPUTING' : severity.text}
+        <Badge
+          accent={loading ? 'cyan' : hasData ? severity.accent : 'slate'}
+          variant="outline"
+          pulse={loading || (hasData && severity.accent === 'red')}
+        >
+          {loading ? 'COMPUTING' : hasData ? severity.text : 'STANDBY'}
         </Badge>
       </div>
 
@@ -119,12 +133,19 @@ export function BlastRadiusGauge({
       <div
         className="relative mx-auto"
         style={{ width: size, height: size }}
-        role="meter"
-        aria-label="Percentage of services exposed"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(percentage)}
-        aria-valuetext={`${formatNumber(percentage, 1)} percent of services exposed`}
+        {...(hasData
+          ? {
+              role: 'meter' as const,
+              'aria-label': 'Percentage of services exposed',
+              'aria-valuemin': 0,
+              'aria-valuemax': 100,
+              'aria-valuenow': Math.round(percentage),
+              'aria-valuetext': `${formatNumber(percentage, 1)} percent of services exposed`,
+            }
+          : {
+              role: 'img' as const,
+              'aria-label': 'No active incident. Detonate a breach to compute exposure.',
+            })}
       >
         <svg viewBox="0 0 200 200" className="absolute inset-0 h-full w-full" aria-hidden="true">
           <defs>
@@ -139,15 +160,15 @@ export function BlastRadiusGauge({
             </radialGradient>
           </defs>
 
-          <circle cx={CX} cy={CY} r={R - 12} fill="url(#radix-gauge-core)" />
+          {hasData ? <circle cx={CX} cy={CY} r={R - 12} fill="url(#radix-gauge-core)" /> : null}
 
-          {/* Tick ring: lit up to the current value, dim beyond it. */}
+          {/* Tick ring: lit up to the current value, all dim while no incident. */}
           {TICKS.map((tick) => {
             const angle = START_ANGLE + (SWEEP * tick) / 100;
             const major = tick % 50 === 0;
             const [ix, iy] = polar(R + 9, angle);
             const [ox, oy] = polar(R + (major ? 18 : 14), angle);
-            const lit = tick <= shownPct;
+            const lit = hasData && tick <= shownPct;
             return (
               <line
                 key={tick}
@@ -162,117 +183,126 @@ export function BlastRadiusGauge({
             );
           })}
 
-          {/* Track. */}
+          {/* Track - dimmed further while no incident exists. */}
           <path
             d={TRACK_PATH}
             fill="none"
-            stroke="rgb(255 255 255 / 0.07)"
+            stroke={hasData ? 'rgb(255 255 255 / 0.07)' : 'rgb(255 255 255 / 0.045)'}
             strokeWidth="14"
             strokeLinecap="round"
           />
 
-          {/* Bloom: the same arc, fatter and translucent, standing in for a
-              blur filter at a fraction of the raster cost. */}
-          <path
-            d={TRACK_PATH}
-            fill="none"
-            stroke={`rgb(${tone.rgb} / 0.28)`}
-            strokeWidth="22"
-            strokeLinecap="round"
-            pathLength={100}
-            strokeDasharray="100"
-            strokeDashoffset={100 - shownPct}
-          />
-
-          {/* Value arc. */}
-          <path
-            d={TRACK_PATH}
-            fill="none"
-            stroke="url(#radix-gauge-arc)"
-            strokeWidth="11"
-            strokeLinecap="round"
-            pathLength={100}
-            strokeDasharray="100"
-            strokeDashoffset={100 - shownPct}
-          />
-
-          {shownPct > 0.5 ? (
+          {hasData ? (
             <>
-              <circle cx={tipX} cy={tipY} r="7" fill={`rgb(${tone.rgb} / 0.22)`} />
-              <circle cx={tipX} cy={tipY} r="3.4" fill={tone.color} />
+              {/* Bloom: the same arc, fatter and translucent, standing in for a
+                  blur filter at a fraction of the raster cost. */}
+              <path
+                d={TRACK_PATH}
+                fill="none"
+                stroke={`rgb(${tone.rgb} / 0.28)`}
+                strokeWidth="22"
+                strokeLinecap="round"
+                pathLength={100}
+                strokeDasharray="100"
+                strokeDashoffset={100 - shownPct}
+              />
+
+              {/* Value arc. */}
+              <path
+                d={TRACK_PATH}
+                fill="none"
+                stroke="url(#radix-gauge-arc)"
+                strokeWidth="11"
+                strokeLinecap="round"
+                pathLength={100}
+                strokeDasharray="100"
+                strokeDashoffset={100 - shownPct}
+              />
+
+              {shownPct > 0.5 ? (
+                <>
+                  <circle cx={tipX} cy={tipY} r="7" fill={`rgb(${tone.rgb} / 0.22)`} />
+                  <circle cx={tipX} cy={tipY} r="3.4" fill={tone.color} />
+                </>
+              ) : null}
             </>
           ) : null}
         </svg>
 
         {/* Readout, centred over the dial. */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className="flex items-start">
-            <span
-              className={cx(
-                'stat-numeral text-[44px] font-bold leading-none',
-                tone.text,
-                percentage > 0 && tone.textGlow,
-              )}
-            >
-              {formatNumber(shownPct, 0)}
+        {hasData ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div className="flex items-start">
+              <span
+                className={cx(
+                  'stat-numeral text-[44px] font-bold leading-none',
+                  tone.text,
+                  percentage > 0 && tone.textGlow,
+                )}
+              >
+                {formatNumber(shownPct, 0)}
+              </span>
+              <span className={cx('mt-1 ml-0.5 text-lg font-semibold', tone.text)}>%</span>
+            </div>
+            <span className="label-micro mt-1.5">Services Exposed</span>
+            <span className="stat-numeral mt-1 whitespace-nowrap text-sm text-ink-muted">
+              {formatNumber(shownExposed, 0)}
+              <span className="mx-1 text-ink-faint">/</span>
+              {formatNumber(radius?.total_services ?? 0, 0)}
+              <span className="ml-1.5 text-2xs text-ink-faint">services</span>
             </span>
-            <span className={cx('mt-1 ml-0.5 text-lg font-semibold', tone.text)}>%</span>
           </div>
-          <span className="label-micro mt-1.5">Services Exposed</span>
-          <span className="stat-numeral mt-1 text-sm text-ink-muted">
-            {formatNumber(shownExposed, 0)}
-            <span className="mx-1 text-ink-faint">/</span>
-            {formatNumber(radius?.total_services ?? 0, 0)}
-            <span className="ml-1.5 text-2xs text-ink-faint">services</span>
-          </span>
-        </div>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+            <span className="stat-numeral text-4xl font-semibold leading-none text-ink-faint">
+              -
+            </span>
+            <span className="label-micro mt-2.5">No Active Incident</span>
+            <span className="mt-1 text-[10px] leading-4 text-ink-faint">
+              detonate a breach to compute exposure
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* --- Called-out detail -------------------------------------------- */}
-      <div className="grid grid-cols-2 gap-2">
-        <div
-          className={cx(
-            'rounded-lg border px-3 py-2 transition-colors duration-300',
-            tier1 > 0 ? 'halo-alert border-alert/45 bg-alert/10' : 'border-white/10 bg-white/[0.03]',
-          )}
-        >
-          <div className="label-micro truncate">Tier-1 Exposed</div>
-          <div className="mt-0.5 flex items-baseline gap-1.5">
-            <span
-              className={cx(
-                'stat-numeral text-xl font-semibold',
-                tier1 > 0 ? 'text-alert glow-text-red' : 'text-toxic',
-              )}
-            >
-              {formatNumber(shownTier1, 0)}
-            </span>
-            <span className="text-2xs text-ink-faint">
-              {tier1 > 0 ? 'critical services' : 'none reached'}
-            </span>
+      {/* --- Called-out detail, only once an incident exists --------------- */}
+      {hasData ? (
+        <div className="grid grid-cols-2 gap-2">
+          <div
+            className={cx(
+              'rounded-lg border px-3 py-2 transition-colors duration-300',
+              tier1 > 0 ? 'halo-alert border-alert/45 bg-alert/10' : 'border-white/10 bg-white/[0.03]',
+            )}
+          >
+            <div className="label-micro whitespace-nowrap">Tier-1</div>
+            <div className="mt-0.5 flex items-baseline gap-1.5 whitespace-nowrap">
+              <span
+                className={cx(
+                  'stat-numeral text-xl font-semibold',
+                  tier1 > 0 ? 'text-alert glow-text-red' : 'text-toxic',
+                )}
+              >
+                {formatNumber(shownTier1, 0)}
+              </span>
+              <span className="text-2xs text-ink-faint">exposed</span>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+            <div className="label-micro whitespace-nowrap">Lockfiles</div>
+            <div className="mt-0.5 flex items-baseline gap-1 whitespace-nowrap">
+              <span className="stat-numeral text-xl font-semibold text-amber">
+                {formatNumber(radius?.exposed_lockfiles ?? 0, 0)}
+              </span>
+              <span className="stat-numeral text-2xs text-ink-faint">
+                / {formatNumber(radius?.total_lockfiles ?? 0, 0)}
+              </span>
+            </div>
           </div>
         </div>
+      ) : null}
 
-        <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
-          <div className="label-micro truncate">Lockfiles Hit</div>
-          <div className="mt-0.5 flex items-baseline gap-1.5">
-            <span className="stat-numeral text-xl font-semibold text-amber">
-              {formatNumber(radius?.exposed_lockfiles ?? 0, 0)}
-            </span>
-            <span className="stat-numeral text-2xs text-ink-faint">
-              / {formatNumber(radius?.total_lockfiles ?? 0, 0)} tracked
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="skeleton h-1 w-full" aria-hidden="true" />
-      ) : (
-        <p className="text-[10px] leading-relaxed text-ink-faint">
-          Reverse closure over the materialised <span className="font-mono">DEPENDED_ON_BY</span>{' '}
-          edge - every service whose lockfile resolves the compromised package, at any depth.
-        </p>
-      )}
+      {loading ? <div className="skeleton h-1 w-full" aria-hidden="true" /> : null}
     </GlassCard>
   );
 }

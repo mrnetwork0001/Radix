@@ -1,28 +1,42 @@
 /**
- * Top bar: the RADIX wordmark, a live radar motif, and the four headline
- * metrics.
+ * Command bar: RADIX wordmark + radar motif on the left, link health beside it,
+ * four headline metric tiles on the right. One row, ~64-72px tall.
  *
- * Every numeral eases to its new value (see `Stat` / `useCountUp`) because the
- * graph mutates in bursts - a breach simulation changes three tiles at once,
- * and easing is what makes that read as a system reacting rather than a
- * re-render.
+ * Discipline rules this component enforces:
+ * - The bar itself is neutral glass at all times. The red treatment (border
+ *   tint + pulse) is confined to the ALERTS tile, and only while
+ *   `alertCount > 0`.
+ * - Nothing here may ellipsize. Every tile pairs `whitespace-nowrap` with a
+ *   min-width sized to its longest realistic content (math at MIN_W below),
+ *   so tiles grow rather than clip if a value outruns the estimate.
+ * - Numerals ease to new values via `useCountUp` because breach simulations
+ *   change several tiles at once; easing reads as a system reacting.
  */
 
 import { useMemo } from 'react';
 
-import { Badge, GlassCard, Stat, cx, formatNumber } from './ui';
+import { ACCENTS, Badge, GlassCard, cx, formatNumber, useCountUp, type Accent } from './ui';
 import { navigate } from '@/lib/router';
 import type { GraphStats, HealthResponse } from '@/lib/types';
 
 export interface ThreatRadarHeaderProps {
   /** `null` until `GET /api/graph/full` returns; tiles render zeros meanwhile. */
   stats?: GraphStats | null;
-  /** Latency of the most recent closure/breach traversal, in float ms. */
+  /**
+   * Latency of the most recent closure/breach traversal, in float ms.
+   * `null`/`undefined` means no closure has run yet - the CLOSURE tile renders
+   * a dimmed "-" with an "awaiting incident" caption.
+   */
   latencyMs?: number | null;
-  /** Compromised packages currently flagged. Non-zero turns the tile red. */
+  /** Compromised packages currently flagged. Non-zero turns the ALERTS tile red. */
   alertCount?: number;
   /** `null` while the first health poll is in flight. */
   health?: HealthResponse | null;
+  /**
+   * Optional: an incident workflow is open somewhere in the console. Adds a
+   * restrained red hairline to the ALERTS tile - never anything page-wide.
+   */
+  incidentActive?: boolean;
   className?: string;
 }
 
@@ -42,7 +56,7 @@ const EMPTY_STATS: GraphStats = {
 // Radar motif
 // ---------------------------------------------------------------------------
 
-/** Fixed blip positions, in the radar's own 100×100 user space. */
+/** Fixed blip positions, in the radar's own 100x100 user space. */
 const BLIPS: ReadonlyArray<{ x: number; y: number; delay: string }> = [
   { x: 66, y: 36, delay: '0s' },
   { x: 34, y: 62, delay: '0.9s' },
@@ -50,14 +64,15 @@ const BLIPS: ReadonlyArray<{ x: number; y: number; delay: string }> = [
 ];
 
 /**
- * A 60° wedge swept about the dial.
+ * A 60 degree wedge swept about the dial. Always cyan: the radar is identity
+ * chrome, not an alarm surface (alert state lives in the ALERTS tile alone).
  *
  * `transform-box: view-box` is load-bearing: the default `border-box` would
  * resolve `transform-origin` against the wedge's own bounding box, so the
  * sweep would orbit its own corner instead of the centre of the dial.
  */
-function RadarSweep({ size, alerting }: { size: number; alerting: boolean }) {
-  const tone = alerting ? 'var(--red-rgb)' : 'var(--cyan-rgb)';
+function RadarSweep({ size }: { size: number }) {
+  const tone = 'var(--cyan-rgb)';
   const spin = { transformBox: 'view-box', transformOrigin: '50px 50px' } as const;
 
   return (
@@ -111,21 +126,84 @@ function RadarSweep({ size, alerting }: { size: number; alerting: boolean }) {
         />
       ))}
 
-      {/* Contact ring - only while something is actually compromised. */}
-      {alerting ? (
-        <circle
-          cx="50"
-          cy="50"
-          r="46"
-          stroke={`rgb(${tone} / 0.85)`}
-          strokeWidth="1.2"
-          className="animate-pulse-alert"
-          style={spin}
-        />
-      ) : (
-        <circle cx="50" cy="50" r="46" stroke={`rgb(${tone} / 0.35)`} strokeWidth="1" />
-      )}
+      <circle cx="50" cy="50" r="46" stroke={`rgb(${tone} / 0.35)`} strokeWidth="1" />
     </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Metric tile
+// ---------------------------------------------------------------------------
+
+/**
+ * Min-width proof at the tile's type scale (label-micro 11px caps at +0.11em
+ * tracking ~7.5px/glyph; text-xl tabular numerals ~11px/glyph; text-2xs
+ * captions 11px at +0.04em ~6px/glyph; plus px-3 = 24px inner padding):
+ *
+ *   NODES     label "NODES" 38px · numeral "99,999" 66px · caption
+ *             "99,999 edges" 72px  -> 96px  content, min-w 6.5rem (104px)
+ *   LOCKFILES label "LOCKFILES" 68px · caption "99 services" 66px
+ *                                  -> 92px  content, min-w 6.5rem (104px)
+ *   ALERTS    caption "active incident" 90px
+ *                                  -> 114px content, min-w 7.25rem (116px)
+ *   CLOSURE   numeral "1,234.5" 77px · caption "awaiting incident" 102px
+ *                                  -> 126px content, min-w 8rem (128px)
+ *
+ * Every line is `whitespace-nowrap` and nothing sets `overflow: hidden` or
+ * `truncate`, so content beyond these estimates widens the tile instead of
+ * clipping.
+ */
+function MetricTile({
+  label,
+  value,
+  decimals = 0,
+  caption,
+  accent = 'cyan',
+  alarm = false,
+  hairline = false,
+  className,
+}: {
+  label: string;
+  /** `null` renders a dimmed "-" (metric not applicable yet). */
+  value: number | null;
+  decimals?: number;
+  caption: string;
+  accent?: Accent;
+  /** Red border tint + pulse. ALERTS tile only, and only while alerts exist. */
+  alarm?: boolean;
+  /** Restrained red hairline without the pulse (incident open, zero alerts). */
+  hairline?: boolean;
+  className?: string;
+}) {
+  const eased = useCountUp(value ?? 0);
+  const tone = alarm ? ACCENTS.red : ACCENTS[accent];
+  const empty = value === null;
+
+  return (
+    <div
+      className={cx(
+        'whitespace-nowrap rounded-lg border px-3 py-1 transition-colors duration-300',
+        alarm
+          ? 'halo-alert border-alert/45 bg-alert/10'
+          : hairline
+            ? 'border-alert/40 bg-white/[0.03]'
+            : 'border-white/10 bg-white/[0.03]',
+        className,
+      )}
+      data-stat
+    >
+      <div className="label-micro leading-none">{label}</div>
+      <div
+        className={cx(
+          'stat-numeral mt-0.5 text-xl font-semibold leading-none',
+          empty ? 'text-ink-faint' : tone.text,
+          alarm && tone.textGlow,
+        )}
+      >
+        {empty ? '-' : formatNumber(eased, decimals)}
+      </div>
+      <div className="mt-0.5 text-2xs leading-none text-ink-faint">{caption}</div>
+    </div>
   );
 }
 
@@ -138,39 +216,41 @@ export function ThreatRadarHeader({
   latencyMs,
   alertCount = 0,
   health,
+  incidentActive = false,
   className,
 }: ThreatRadarHeaderProps) {
   const s = stats ?? EMPTY_STATS;
   const alerting = alertCount > 0;
-  const latency = typeof latencyMs === 'number' && Number.isFinite(latencyMs) ? latencyMs : 0;
+  const closureMs =
+    typeof latencyMs === 'number' && Number.isFinite(latencyMs) ? latencyMs : null;
+  const pingMs =
+    typeof health?.latency_ms === 'number' && Number.isFinite(health.latency_ms)
+      ? health.latency_ms
+      : null;
 
   const link = useMemo(() => {
-    if (!health) return { accent: 'slate' as const, text: 'LINKING…', detail: 'contacting backend' };
+    if (!health) return { accent: 'slate' as const, text: 'LINKING', detail: 'contacting backend' };
     if (!health.hydra_ready)
-      return { accent: 'red' as const, text: 'HYDRA DOWN', detail: 'degraded - cached view' };
+      return { accent: 'red' as const, text: 'DEGRADED', detail: 'HydraDB unreachable - cached view' };
     if (!health.seeded)
       return { accent: 'amber' as const, text: 'UNSEEDED', detail: 'graph is empty' };
-    return {
-      accent: 'green' as const,
-      text: 'HYDRA LIVE',
-      detail: `${formatNumber(health.latency_ms, 1)} ms ping`,
-    };
+    return { accent: 'green' as const, text: 'HYDRA LIVE', detail: 'backend link healthy' };
   }, [health]);
 
   return (
     <GlassCard
       as="header"
-      accent={alerting ? 'red' : 'cyan'}
+      accent="cyan"
       glow
       raised
       className={cx(
-        'flex flex-wrap items-center justify-between gap-x-8 gap-y-5 px-5 py-4',
+        'flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-1.5',
         className,
       )}
       aria-label="Radix threat radar"
     >
-      {/* --- Identity --------------------------------------------------- */}
-      <div className="flex min-w-0 items-center gap-4">
+      {/* --- Identity + link health -------------------------------------- */}
+      <div className="flex items-center gap-4">
         {/* The wordmark is the way back to the landing page - SPA-routed so
             the console's state dies with the unmount, exactly like a reload. */}
         <a
@@ -181,141 +261,75 @@ export function ThreatRadarHeader({
             navigate('/');
           }}
           className={cx(
-            'group -m-1 flex min-w-0 items-center gap-4 rounded-lg p-1',
+            'group -m-1 flex items-center gap-3 rounded-lg p-1',
             'transition-opacity duration-200 hover:opacity-85 focus-visible:outline-none',
           )}
         >
-          <RadarSweep size={62} alerting={alerting} />
+          <RadarSweep size={40} />
 
           <h1
             className={cx(
               'bg-gradient-to-r from-cyan via-white to-violet bg-clip-text',
-              'text-[27px] font-bold leading-none tracking-[0.3em] text-transparent',
+              'text-lg font-bold leading-none tracking-[0.3em] text-transparent',
             )}
           >
             RADIX
           </h1>
         </a>
 
-        <div className="min-w-0">
-          <div className="flex items-center gap-3">
-            <Badge accent={link.accent} variant="outline" pulse title={link.detail}>
-              {link.text}
-            </Badge>
-          </div>
+        <div className="flex items-center gap-2">
+          <Badge accent={link.accent} variant="outline" pulse title={link.detail}>
+            {link.text}
+          </Badge>
 
-          <p className="mt-1.5 truncate text-2xs uppercase tracking-[0.16em] text-ink-faint">
-            Supply-chain sentinel
-            <span className="mx-1.5 text-white/20">/</span>
-            graph-native breach closure
-            <span className="mx-1.5 text-white/20">/</span>
-            <span className="text-ink-muted">{link.detail}</span>
-          </p>
+          {pingMs !== null ? (
+            <span className="chip tabular" title="Health-poll round trip">
+              {formatNumber(pingMs, 0)} ms
+            </span>
+          ) : null}
         </div>
       </div>
 
       {/* --- Live metrics ------------------------------------------------ */}
-      <div className="grid min-w-0 flex-1 grid-cols-2 gap-2.5 sm:grid-cols-4 lg:max-w-[46rem]">
-        <Stat
-          label="Total Nodes"
+      <div className="flex flex-wrap items-stretch gap-2">
+        <MetricTile
+          label="NODES"
           value={s.total_nodes}
           accent="cyan"
-          hint={`${formatNumber(s.total_edges)} edges`}
-          icon={<GlyphNodes />}
+          caption={`${formatNumber(s.total_edges)} edges`}
+          className="min-w-[6.5rem]"
         />
-        <Stat
-          label="Tracked Lockfiles"
+        <MetricTile
+          label="LOCKFILES"
           value={s.tracked_lockfiles}
           accent="amber"
-          hint={`${formatNumber(s.services)} services watched`}
-          icon={<GlyphLock />}
+          caption={`${formatNumber(s.services)} services`}
+          className="min-w-[6.5rem]"
         />
 
         {/* Announced on change: this tile is the whole point of the header. */}
-        <div role="status" aria-live="polite">
-          <Stat
-            label="Compromise Alerts"
+        <div role="status" aria-live="polite" className="flex items-stretch">
+          <MetricTile
+            label="ALERTS"
             value={alertCount}
             accent="green"
             alarm={alerting}
-            hint={alerting ? 'active supply-chain incident' : 'no active incidents'}
-            icon={alerting ? <GlyphAlert /> : <GlyphShield />}
+            hairline={incidentActive}
+            caption={alerting ? 'active incident' : 'supply-chain'}
+            className="min-w-[7.25rem]"
           />
         </div>
 
-        <Stat
-          label="Closure Latency"
-          value={latency}
+        <MetricTile
+          label="CLOSURE"
+          value={closureMs}
           decimals={1}
-          suffix="ms"
           accent="cyan"
-          hint="HydraDB traversal"
-          icon={<GlyphBolt />}
+          caption={closureMs === null ? 'awaiting incident' : 'ms · HydraDB'}
+          className="min-w-[8rem]"
         />
       </div>
     </GlassCard>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Glyphs - inline so the bundle carries no icon dependency.
-// ---------------------------------------------------------------------------
-
-const glyph = {
-  width: 14,
-  height: 14,
-  viewBox: '0 0 24 24',
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 1.8,
-  strokeLinecap: 'round' as const,
-  strokeLinejoin: 'round' as const,
-  'aria-hidden': true,
-};
-
-function GlyphNodes() {
-  return (
-    <svg {...glyph}>
-      <circle cx="5" cy="6" r="2.2" />
-      <circle cx="19" cy="6" r="2.2" />
-      <circle cx="12" cy="18" r="2.2" />
-      <path d="M6.6 7.6 10.6 16M17.4 7.6 13.4 16M7.2 6h9.6" />
-    </svg>
-  );
-}
-
-function GlyphLock() {
-  return (
-    <svg {...glyph}>
-      <rect x="4" y="10" width="16" height="10" rx="2" />
-      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-    </svg>
-  );
-}
-
-function GlyphAlert() {
-  return (
-    <svg {...glyph}>
-      <path d="M12 3.6 2.6 20h18.8L12 3.6Z" />
-      <path d="M12 9.5v4.5M12 17.2v.1" />
-    </svg>
-  );
-}
-
-function GlyphShield() {
-  return (
-    <svg {...glyph}>
-      <path d="M12 3 4.5 6v6c0 4.4 3.1 7.9 7.5 9 4.4-1.1 7.5-4.6 7.5-9V6L12 3Z" />
-      <path d="m9 12 2.2 2.2L15.5 10" />
-    </svg>
-  );
-}
-
-function GlyphBolt() {
-  return (
-    <svg {...glyph}>
-      <path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2Z" />
-    </svg>
   );
 }
 

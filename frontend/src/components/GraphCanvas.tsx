@@ -901,6 +901,16 @@ export function GraphCanvas({
       ) : (
         <GraphPlaceholder empty={data !== null && model.nodes.length === 0} />
       )}
+
+      {/* Chrome only accompanies a live canvas - a legend over the loading
+          skeleton would label nothing. Both overlays are pointer-events-none
+          throughout, so every wheel/drag/click still lands on the canvas. */}
+      {hasData && ready ? (
+        <>
+          <CanvasLegend showInfectionPath={isSimulating || infectedIds.size > 0} />
+          <CanvasHint />
+        </>
+      ) : null}
     </div>
   );
 }
@@ -922,6 +932,105 @@ function GraphPlaceholder({ empty }: { empty: boolean }) {
           <div className="label-micro mt-1">traversing HydraDB…</div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Canvas chrome
+// ---------------------------------------------------------------------------
+// Legend and interaction hint, floated over the canvas. Colours come from the
+// same `RGB` table the paint callbacks stringify, so the legend can never
+// drift from the pixels it describes. Every element here is pointer-events-
+// none: the canvas owns all mouse input, and the chrome merely annotates it.
+
+/** One legend row per node kind, in reading order of visual importance. */
+const LEGEND_ROWS: ReadonlyArray<{ label: string; colorKey: string }> = [
+  { label: 'Package', colorKey: 'cyan' },
+  { label: 'Service', colorKey: 'green' },
+  { label: 'Maintainer', colorKey: 'violet' },
+  { label: 'Version', colorKey: 'slate' },
+  { label: 'Lockfile', colorKey: 'amber' },
+];
+
+/** Shared shell for every chrome pill: low-opacity glass, hairline, no wrap. */
+const CHROME_PILL =
+  'flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 ' +
+  'bg-deep/55 px-2.5 py-1 backdrop-blur-md';
+
+/**
+ * Node-kind legend, top-right.
+ *
+ * The compromised dot reuses the `.halo-alert` pulse from index.css - the
+ * rings inherit the dot's border-radius, so the treatment stays on the dot
+ * alone, and the global `prefers-reduced-motion` rule in index.css collapses
+ * the animation for users who ask for stillness (the CSS media query covers
+ * what usePrefersReducedMotion covers for rAF-driven motion).
+ */
+function CanvasLegend({ showInfectionPath }: { showInfectionPath: boolean }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute right-3 top-3 z-10 flex select-none flex-col items-end gap-1"
+    >
+      {LEGEND_ROWS.map((row) => (
+        <div key={row.label} className={CHROME_PILL}>
+          <span
+            className="h-1.5 w-1.5 shrink-0 rounded-full"
+            style={{
+              backgroundColor: solid(row.colorKey),
+              boxShadow: `0 0 6px ${rgba(row.colorKey, 0.55)}`,
+            }}
+          />
+          <span className="label-micro">{row.label}</span>
+        </div>
+      ))}
+
+      <div className={CHROME_PILL}>
+        <span
+          className="halo-alert h-1.5 w-1.5 shrink-0 rounded-full"
+          style={{
+            backgroundColor: solid('red'),
+            boxShadow: `0 0 6px ${rgba('red', 0.55)}`,
+          }}
+        />
+        <span className="label-micro">Compromised</span>
+      </div>
+
+      {showInfectionPath ? (
+        <div className={CHROME_PILL}>
+          {/* Dashed glyph mirroring the travelling dash painted on infected links. */}
+          <svg width="14" height="4" viewBox="0 0 14 4" className="shrink-0">
+            <line
+              x1="1"
+              y1="2"
+              x2="13"
+              y2="2"
+              stroke={rgba('red', 0.9)}
+              strokeWidth="1.5"
+              strokeDasharray="3 2.5"
+              strokeLinecap="round"
+            />
+          </svg>
+          <span className="label-micro">Infection path</span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Interaction hint, bottom-right. One line; the pill sizes to its content. */
+function CanvasHint() {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute bottom-3 right-3 z-10 select-none"
+    >
+      <div className={CHROME_PILL}>
+        <span className="text-2xs text-ink-faint">
+          scroll to zoom · drag to pan · click a node to inspect
+        </span>
+      </div>
     </div>
   );
 }

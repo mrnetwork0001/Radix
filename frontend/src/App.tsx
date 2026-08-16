@@ -97,8 +97,13 @@ export default function App() {
     return graph.data?.stats.compromised_packages ?? 0;
   }, [breach.result, graph.data]);
 
-  /** Closure latency is the number worth showing - it is the graph traversal. */
-  const latencyMs = closure?.latency_ms ?? graph.latencyMs;
+  /**
+   * Closure latency is the number worth showing - it is the incident
+   * traversal. Deliberately NOT the full-graph fetch time: showing a 300ms
+   * bulk load under a "closure" label undersells the engine. Null until the
+   * first incident runs; the header renders an awaiting state.
+   */
+  const latencyMs = closure?.latency_ms ?? null;
 
   const status = useMemo(() => {
     if (breach.error) return `simulation failed: ${breach.error.message}`;
@@ -198,6 +203,7 @@ export default function App() {
         latencyMs={latencyMs}
         alertCount={alertCount}
         health={health}
+        incidentActive={breach.isSimulating || breach.result !== null}
       />
 
       <main className="relative flex-1 overflow-hidden">
@@ -211,11 +217,15 @@ export default function App() {
           isSimulating={breach.isSimulating}
         />
 
-        {/* Controls float over the canvas so the graph keeps the full viewport. */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 flex w-[22rem] max-w-[85vw] flex-col justify-end gap-4 p-6">
-          <div className="pointer-events-auto">
-            <BlastRadiusGauge blastRadius={blastRadius} loading={breach.isLoading} />
-          </div>
+        {/* Controls float over the canvas so the graph keeps the full viewport.
+            Incident console first: it is the console's primary action, and the
+            gauge below it only earns attention once an incident exists. */}
+        {/* overflow-y-auto: the container is pointer-events-none, but wheel
+            events over the (pointer-events-auto) panels bubble here, so the
+            rail scrolls when it outgrows the viewport instead of clipping -
+            while empty rail space still passes zoom/drag through to the
+            canvas. */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 flex w-[22rem] max-w-[85vw] flex-col justify-start gap-4 overflow-y-auto p-6">
           <div className="pointer-events-auto">
             <ControlDock
               onSimulate={handleSimulate}
@@ -227,6 +237,9 @@ export default function App() {
               disabled={!graph.data || graph.isInitialLoad}
               targetName={breachTarget?.name ?? FALLBACK_BREACH_PACKAGE}
             />
+          </div>
+          <div className="pointer-events-auto">
+            <BlastRadiusGauge blastRadius={blastRadius} loading={breach.isLoading} />
           </div>
         </div>
 
