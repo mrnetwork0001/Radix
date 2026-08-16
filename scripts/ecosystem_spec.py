@@ -301,6 +301,16 @@ INFECTION_SATELLITES: list[tuple[str, str]] = [
     ("query-devtools-panel", "tanstack-query-devtools"),
 ]
 
+#: Satellite constraints that make version-exact refinement visible: these two
+#: direct dependents of the victim pin ``~4.27.0``, which cannot resolve the
+#: compromised 4.28.x line, so the precision pass prunes them from the closure.
+#: Both are pure satellites - on no INFECTION_CHAIN that reaches a Service -
+#: so the package-level 7/20 service blast radius is untouched.
+SATELLITE_CONSTRAINTS: dict[str, str] = {
+    "vue-query-shim": "~4.27.0",
+    "svelte-query-shim": "~4.27.0",
+}
+
 #: Extra edges inside the infected region so SSpaths finds several routes to
 #: the same victim. Each is chosen so it cannot shorten an existing chain
 #: (``depth(src) <= depth(dst) + 1``); ``_assert_blast_radius`` re-checks.
@@ -696,7 +706,7 @@ class _Builder:
                 self._depends(a, b, "^4.27.0" if b.id == victim.id else "^2.0.0")
 
         for name, parent in INFECTION_SATELLITES:
-            self._depends(self.pkg[name], self.pkg[parent], "^4.28.0")
+            self._depends(self.pkg[name], self.pkg[parent], SATELLITE_CONSTRAINTS.get(name, "^4.28.0"))
 
         for src, dst in INFECTION_CROSSLINKS:
             self._depends(self.pkg[src], self.pkg[dst], "~1.4.0")

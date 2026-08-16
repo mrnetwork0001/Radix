@@ -26,7 +26,7 @@ import {
   useEnterTransition,
 } from './ui';
 import type { Accent } from './ui';
-import type { BlastRadius } from '@/lib/types';
+import type { BlastRadius, ClosurePrecision } from '@/lib/types';
 
 export interface BlastRadiusGaugeProps {
   /** `null` before any closure has been computed. */
@@ -34,6 +34,8 @@ export interface BlastRadiusGaugeProps {
   loading?: boolean;
   /** Rendered diameter in px. */
   size?: number;
+  /** Version-exact refinement details; shows what semver evidence pruned. */
+  precision?: ClosurePrecision | null;
   className?: string;
 }
 
@@ -82,6 +84,7 @@ export function BlastRadiusGauge({
   blastRadius,
   loading = false,
   size = 216,
+  precision = null,
   className,
 }: BlastRadiusGaugeProps) {
   const radius = blastRadius ?? null;
@@ -302,6 +305,34 @@ export function BlastRadiusGauge({
                 / {formatNumber(radius?.total_lockfiles ?? 0, 0)}
               </span>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* --- Version-exact provenance ------------------------------------
+          The dial above is evidence-pruned; this strip says so, and by how
+          much. Silent when nothing was pruned or precision is package-level:
+          a claim of exactness with nothing to show is just noise. */}
+      {hasData &&
+      precision?.mode === 'version' &&
+      (precision.pruned_package_ids.length > 0 || precision.pruned_service_ids.length > 0) ? (
+        <div
+          className="rounded-lg border border-cyan/25 bg-cyan/[0.06] px-3 py-2"
+          title={
+            'Direct dependents whose semver range cannot resolve the compromised ' +
+            'version, and lockfiles pinning a clean release, are excluded from the ' +
+            'blast radius. Package-level closure would have reported ' +
+            `${precision.package_level.exposed_services} services (${precision.package_level.percentage}%).`
+          }
+        >
+          <div className="flex items-baseline justify-between gap-2 whitespace-nowrap">
+            <span className="label-micro text-cyan">version-exact</span>
+            <span className="stat-numeral text-2xs text-ink-muted">
+              {precision.pruned_package_ids.length + precision.pruned_service_ids.length} pruned
+              {precision.package_level.exposed_services > (radius?.exposed_services ?? 0)
+                ? ` · pkg-level said ${precision.package_level.exposed_services}`
+                : ''}
+            </span>
           </div>
         </div>
       ) : null}

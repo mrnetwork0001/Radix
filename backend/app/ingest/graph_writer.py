@@ -625,7 +625,7 @@ class GraphWriter:
             row["name"]: row
             for row in self._scan_label(
                 schema.PACKAGE,
-                ("name", "ecosystem", "is_compromised", "risk_score", "advisories"),
+                ("name", "ecosystem", "is_compromised", "risk_score", "advisories", "mal_versions"),
             )
             if row.get("name")
         }
@@ -661,6 +661,19 @@ class GraphWriter:
                 if not row.get("is_compromised"):
                     newly_flagged += 1
                 props["is_compromised"] = True
+                # The exact malicious releases, when the advisory enumerates
+                # them. This is what lets bad-version resolution distinguish
+                # the COMPROMISE (e.g. debug 4.4.2) from an old vulnerability
+                # window (debug <=3.2.6) - the two produce opposite blast radii.
+                known_mal = {v for v in (row.get("mal_versions") or "").split(",") if v}
+                enumerated = {
+                    v
+                    for a in package_advisories
+                    if a.malicious or a.id.startswith("MAL-")
+                    for v in a.affected_versions
+                }
+                if known_mal | enumerated:
+                    props["mal_versions"] = ",".join(sorted(known_mal | enumerated))
             elif new_ids:
                 current = float(row.get("risk_score") or RISK_DEFAULT)
                 props["risk_score"] = round(

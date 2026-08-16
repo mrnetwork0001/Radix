@@ -296,7 +296,7 @@ class QueryResult:
 #: properties come back as the ``null`` tag, which unwraps to ``None`` and is
 #: dropped before the node dict reaches the API layer.
 _LABEL_PROPERTIES: dict[str, tuple[str, ...]] = {
-    schema.PACKAGE: ("name", "ecosystem", "is_compromised", "risk_score", "downloads_weekly"),
+    schema.PACKAGE: ("name", "ecosystem", "is_compromised", "risk_score", "downloads_weekly", "mal_versions"),
     # `package_id` is the only reliable link back to the owning Package: a
     # Version is named `<package>@<semver>`, so joining on `name` matches
     # nothing. Version->Package joins depend on this being projected.
