@@ -105,7 +105,7 @@ through a five-hop chain it has no textual resemblance to.
 
 Concretely, HydraDB does the work in every request:
 
-- the **closure** is a single bounded variable-length traversal (`MATCH (victim {id: $pkg})-[:DEPENDED_ON_BY*1..6]->(x)`) answering in single-digit milliseconds;
+- the **closure** is a single bounded variable-length traversal (`MATCH (victim {id: $pkg})-[:DEPENDED_ON_BY*1..6]->(x)`), the engine's share of which is a few milliseconds;
 - the **infection animation** replays real paths from the native `algo.SSpaths` procedure, not choreography;
 - the **maintainer walk** and **typosquat lookups** are fixed-length hops over the same graph;
 - **namespaces** isolate the demo world (`radix`), live data (`radix/live`) and test scratch (`radix/test`) inside one engine, with prefix-scoped token authorization we verified by probe.
