@@ -232,7 +232,8 @@ export interface SimulateBreachResponse {
 
 export interface GenerateFixRequest {
   package_id: number;
-  bad_version: string;
+  /** Omit to let the backend pick the earliest release inside the window. */
+  bad_version?: string;
   /** Omit to patch every exposed service. */
   service_ids?: number[];
 }

@@ -16,6 +16,12 @@ import { MAX_DEPTH, MIN_DEPTH } from '@/lib/api';
 export interface ControlDockProps {
   /** Fires the headline `POST /api/simulate-breach`. */
   onSimulate: () => void;
+  /**
+   * Package the hero button will breach. With real ingested data the epicentre
+   * is whatever the advisory feed actually flagged, so the label cannot be
+   * hardcoded to the demo world's tanstack-query.
+   */
+  targetName?: string | null;
   /** Clears the incident and returns the canvas to the clean graph. */
   onReset: () => void;
   isSimulating?: boolean;
@@ -42,6 +48,7 @@ export function ControlDock({
   onDepthChange,
   status,
   disabled = false,
+  targetName,
   className,
 }: ControlDockProps) {
   const sliderId = useId();
@@ -78,7 +85,7 @@ export function ControlDock({
         onClick={onSimulate}
         disabled={busy || disabled}
         aria-busy={busy}
-        aria-label="Simulate the TanStack worm supply-chain attack"
+        aria-label={`Simulate a supply-chain breach of ${targetName ?? 'the compromised package'}`}
         className={cx(
           'group relative w-full overflow-hidden rounded-xl px-4 py-3.5 text-left',
           'border border-alert/50 bg-gradient-to-br from-alert/25 via-alert/10 to-transparent',
@@ -110,8 +117,12 @@ export function ControlDock({
           </span>
 
           <span className="min-w-0">
-            <span className="block text-sm font-semibold tracking-wide text-alert glow-text-red">
-              {busy ? 'SIMULATING WORM…' : 'SIMULATE TANSTACK WORM ATTACK'}
+            <span className="block truncate text-sm font-semibold tracking-wide text-alert glow-text-red">
+              {busy
+                ? 'SIMULATING BREACH…'
+                : targetName
+                  ? `SIMULATE BREACH: ${targetName.toUpperCase()}`
+                  : 'SIMULATE WORM ATTACK'}
             </span>
             <span className="mt-0.5 block truncate text-2xs text-ink-muted">
               inject compromised release → walk the reverse closure

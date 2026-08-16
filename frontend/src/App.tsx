@@ -25,9 +25,8 @@ import type {
   TyposquatCandidate,
 } from './lib/types';
 
-/** The demo's epicentre. Resolved by name so a re-seed cannot stale the id. */
-const BREACH_PACKAGE = 'tanstack-query';
-const BREACH_VERSION = '4.28.0';
+/** Demo-world fallback when nothing in the graph is actually flagged. */
+const FALLBACK_BREACH_PACKAGE = 'tanstack-query';
 const HEALTH_POLL_MS = 15_000;
 
 export default function App() {
@@ -69,6 +68,24 @@ export default function App() {
 
   const selectedNode = selectedId === null ? null : nodesById.get(selectedId) ?? null;
 
+  /**
+   * The breach epicentre: whatever the advisory feed actually flagged, worst
+   * first. With real ingested data this is a live finding; the demo world's
+   * tanstack-query only appears as a fallback when nothing is flagged.
+   */
+  const breachTarget = useMemo(() => {
+    const flagged = (graph.data?.nodes ?? []).filter(
+      (n) => n.label === 'Package' && n.is_compromised,
+    );
+    if (flagged.length === 0) return null;
+    flagged.sort(
+      (a, b) =>
+        (b.risk_score ?? 0) - (a.risk_score ?? 0) ||
+        (b.downloads_weekly ?? 0) - (a.downloads_weekly ?? 0),
+    );
+    return flagged[0];
+  }, [graph.data]);
+
   const closure = breach.result?.closure ?? null;
   const blastRadius = breach.result?.blast_radius ?? null;
 
@@ -104,12 +121,13 @@ export default function App() {
   const handleSimulate = useCallback(() => {
     setStandaloneSquats(null);
     void breach.simulate({
-      package_name: BREACH_PACKAGE,
-      version: BREACH_VERSION,
+      ...(breachTarget
+        ? { package_id: breachTarget.id }
+        : { package_name: FALLBACK_BREACH_PACKAGE }),
       window_hours: 48,
       depth,
     });
-  }, [breach, depth]);
+  }, [breach, breachTarget, depth]);
 
   const handleReset = useCallback(() => {
     breach.reset();
@@ -129,9 +147,13 @@ export default function App() {
       setPatchLoading(true);
       setPatchOpen(true);
       try {
+        // bad_version is omitted when no incident is live — the backend
+        // resolves the compromised version from the graph itself.
         const result = await api.generateFix({
           package_id: target,
-          bad_version: breach.result?.compromised_version ?? BREACH_VERSION,
+          ...(breach.result?.compromised_version
+            ? { bad_version: breach.result.compromised_version }
+            : {}),
           ...(node.label === 'Service' ? { service_ids: [node.id] } : {}),
         });
         setPatch(result);
@@ -203,6 +225,7 @@ export default function App() {
               onDepthChange={setDepth}
               status={status}
               disabled={!graph.data || graph.isInitialLoad}
+              targetName={breachTarget?.name ?? FALLBACK_BREACH_PACKAGE}
             />
           </div>
         </div>
