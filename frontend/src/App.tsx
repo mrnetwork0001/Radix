@@ -1,8 +1,8 @@
 /**
  * Radix dashboard composition root.
  *
- * Owns the state the panels disagree about — which node is selected, how deep
- * the traversal runs, whether a patch is on screen — and leaves rendering to
+ * Owns the state the panels disagree about - which node is selected, how deep
+ * the traversal runs, whether a patch is on screen - and leaves rendering to
  * the components. The two hooks hold the rest: `useGraphData` for the static
  * ecosystem, `useBreachSimulation` for the incident and its hop-by-hop reveal.
  */
@@ -97,7 +97,7 @@ export default function App() {
     return graph.data?.stats.compromised_packages ?? 0;
   }, [breach.result, graph.data]);
 
-  /** Closure latency is the number worth showing — it is the graph traversal. */
+  /** Closure latency is the number worth showing - it is the graph traversal. */
   const latencyMs = closure?.latency_ms ?? graph.latencyMs;
 
   const status = useMemo(() => {
@@ -105,11 +105,11 @@ export default function App() {
     if (breach.isLoading) return 'running reverse closure in HydraDB…';
     if (breach.isSimulating) {
       const hop = Math.max(breach.currentHop, 0);
-      return `propagating — hop ${hop} of ${Math.max(breach.maxHop, 0)}`;
+      return `propagating - hop ${hop} of ${Math.max(breach.maxHop, 0)}`;
     }
     if (breach.result) {
       const { exposed_services: exposed, total_services: total } = breach.result.blast_radius;
-      return `closure resolved in ${closure?.latency_ms?.toFixed(1) ?? '—'} ms · ${exposed}/${total} services exposed`;
+      return `closure resolved in ${closure?.latency_ms?.toFixed(1) ?? '-'} ms · ${exposed}/${total} services exposed`;
     }
     if (graph.isInitialLoad) return 'loading ecosystem graph…';
     if (graph.error) return `graph unavailable: ${graph.error.message}`;
@@ -140,14 +140,14 @@ export default function App() {
   const handleGeneratePatch = useCallback(
     async (node: GraphNode) => {
       // The patch always targets the compromised package, even when the click
-      // came from a downstream service — that is the thing being pinned.
+      // came from a downstream service - that is the thing being pinned.
       const target = closure?.root.id ?? (node.label === 'Package' ? node.id : null);
       if (target === null) return;
 
       setPatchLoading(true);
       setPatchOpen(true);
       try {
-        // bad_version is omitted when no incident is live — the backend
+        // bad_version is omitted when no incident is live - the backend
         // resolves the compromised version from the graph itself.
         const result = await api.generateFix({
           package_id: target,

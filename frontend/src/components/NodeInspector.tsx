@@ -1,7 +1,7 @@
 /**
  * Slide-in inspector for the selected graph node.
  *
- * `GraphNode` is a flattened union — the backend omits the fields that do not
+ * `GraphNode` is a flattened union - the backend omits the fields that do not
  * apply to a node's `label` (docs/API_CONTRACT.md), so every type-specific
  * section here branches on `label` rather than probing for a field.
  *
@@ -39,7 +39,7 @@ import type {
 } from '@/lib/types';
 
 export interface NodeInspectorProps {
-  /** Nothing renders when null — the panel is unmounted, not hidden. */
+  /** Nothing renders when null - the panel is unmounted, not hidden. */
   node: GraphNode | null;
   /** Latest closure, used for depth, exposure and lockfile paths. */
   closure?: ClosureResponse | null;
@@ -445,7 +445,7 @@ function PackageMeta({ node }: { node: GraphNode }) {
       </MetaRow>
       <MetaRow label="Compromised">
         {node.is_compromised ? (
-          <span className="text-alert">yes — malicious release</span>
+          <span className="text-alert">yes - malicious release</span>
         ) : (
           <span className="text-toxic">no</span>
         )}

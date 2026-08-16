@@ -10,8 +10,8 @@ Everything here is shaped by the verified engine constraints in
 ``docs/HYDRADB_CONTRACT.md``:
 
 * **Nodes** upsert as ``MERGE (n {id: row.vertex}) SET n:Label, n.x = row.x``.
-  Extra properties cannot be folded into the ``MERGE`` pattern — the pattern is
-  the identity being matched — so identity and payload are split.
+  Extra properties cannot be folded into the ``MERGE`` pattern - the pattern is
+  the identity being matched - so identity and payload are split.
 * **Edges** upsert as ``MATCH (s:A {id: row.src}), (d:B {id: row.dst})
   MERGE (s)-[r:TYPE {id: row.eid}]->(d) SET ...``. Each endpoint needs exactly
   one label, and a relationship carrying properties needs an explicit

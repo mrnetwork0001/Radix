@@ -5,7 +5,7 @@
  * the objects it is handed (it writes `x`/`y`/`vx`/`vy` onto every node during
  * simulation). That makes identity load-bearing: this hook therefore keeps the
  * exact array instances the backend produced and never re-wraps them on a
- * re-render. A refetch deliberately produces brand-new instances — that is the
+ * re-render. A refetch deliberately produces brand-new instances - that is the
  * one moment the layout is *supposed* to restart.
  */
 
@@ -35,7 +35,7 @@ export interface UseGraphDataResult {
   /** True whenever a request is in flight, including a background refetch. */
   loading: boolean;
   error: Error | null;
-  /** Re-runs the query. Never rejects — failures land in `error`. */
+  /** Re-runs the query. Never rejects - failures land in `error`. */
   refetch: () => Promise<void>;
   /** True only for the first load, when there is nothing to render yet. */
   isInitialLoad: boolean;

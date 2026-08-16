@@ -8,27 +8,27 @@ namespace using the verified forms from ``docs/HYDRADB_CONTRACT.md`` §4:
   batched statement has one fixed SET clause, and grouping also means no row
   ever writes a null);
 * edges upsert as ``MATCH (s:A {id: row.src}), (d:B {id: row.dst})
-  MERGE (s)-[r:TYPE {id: row.eid}]->(d) SET ...`` — exactly one label per
+  MERGE (s)-[r:TYPE {id: row.eid}]->(d) SET ...`` - exactly one label per
   endpoint, explicit ``id: row.eid`` on every relationship;
 * every ``DEPENDS_ON`` is mirrored as ``DEPENDED_ON_BY`` and every
   ``MAINTAINED_BY`` as ``MAINTAINS``, because variable-length traversal only
   runs forward from a fixed source id.
 
-**Node identity — the graph is the id registry.** At init the target
+**Node identity - the graph is the id registry.** At init the target
 namespace is label-scanned for existing ``natural key -> id`` per label, and
 new ids are allocated sequentially after each label's highest existing offset
 (the partitions in ``schema._BASES``). Re-ingesting the same repo therefore
 MERGEs onto the same ids.
 
-**Edge identity — deterministic 62-bit hashes.** Verified by live probe on
+**Edge identity - deterministic 62-bit hashes.** Verified by live probe on
 2026-08-16 (see ``backend/tests/test_graph_writer.py``): a relationship ``id``
 property of ``2**62 - 1`` (4611686018427387903) round-trips *exactly* through
-``MERGE`` + read-back — HydraDB stores it as ``Integer`` (u64), so the full
+``MERGE`` + read-back - HydraDB stores it as ``Integer`` (u64), so the full
 62-bit hash is safe and no 53-bit fallback is needed. Two engine wrinkles the
 same probes surfaced:
 
-* ``r.id`` can never be referenced in a plain ``MATCH`` — projection *or*
-  ``WHERE`` — it fails with "unbound variable r". The stored edge id is only
+* ``r.id`` can never be referenced in a plain ``MATCH`` - projection *or*
+  ``WHERE`` - it fails with "unbound variable r". The stored edge id is only
   readable through a path value's ``properties.id`` (``algo.SSpaths``).
 * ``HydraClient`` does not follow ``next_cursor``, so registry scans paginate
   with ``ORDER BY n.id SKIP/LIMIT`` (both verified supported).
@@ -148,7 +148,7 @@ def _load_satisfies() -> Callable[[str, str], bool] | None:
     global _satisfies_fn
     if _satisfies_fn is None:
         try:
-            from .. import semver_npm  # noqa: PLC0415 — deliberate lazy import
+            from .. import semver_npm  # noqa: PLC0415 - deliberate lazy import
 
             _satisfies_fn = semver_npm.satisfies
         except Exception:
@@ -245,7 +245,7 @@ class _Registry:
     next_offset: dict[str, int] = field(default_factory=dict)
 
     def id_for(self, label: str, key: str) -> tuple[int, bool]:
-        """``(vertex_id, created)`` — allocation after the label's high mark."""
+        """``(vertex_id, created)`` - allocation after the label's high mark."""
         cache_key = (label, key)
         existing = self.by_key.get(cache_key)
         if existing is not None:
@@ -310,7 +310,7 @@ class GraphWriter:
                 vertex = int(row["id"])
                 offset = vertex - base
                 if not 0 <= offset < schema._SPAN:
-                    continue  # foreign id — never allocate around it
+                    continue  # foreign id - never allocate around it
                 high = max(high, offset)
                 key = _natural_key(label, row)
                 if key is not None:
@@ -479,7 +479,7 @@ class GraphWriter:
                 "ecosystem": eco,
                 # Version->Package joins run on this property (a Version's
                 # `name` is "<package>@<semver>", so a name join matches
-                # nothing — see git 631c570).
+                # nothing - see git 631c570).
                 "package_id": pkg_id,
                 "package_name": name,
                 "published_at": info.published_at.get(semver) if info else None,

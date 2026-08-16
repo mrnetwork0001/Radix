@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 /* =============================================================================
-   Radix design system — dark cyberpunk / glassmorphism
+   Radix design system - dark cyberpunk / glassmorphism
    -----------------------------------------------------------------------------
    Tokens live here and nowhere else. Tailwind reads the `*-rgb` channel triplets
    (so `/<alpha-value>` modifiers work); the force-graph canvas cannot use
    Tailwind at all, so src/lib/theme.ts mirrors the same hex literals for the
-   2D renderer. Changing a colour means changing it in both places — that pairing
+   2D renderer. Changing a colour means changing it in both places - that pairing
    is called out at the top of theme.ts.
 
    Animation budget: every keyframe below animates only `transform` and
@@ -247,7 +247,7 @@
   }
 
   /* --- Glow ---------------------------------------------------------------
-     `.glow-*` composes with `.glass` — the glass shadow stack is re-declared
+     `.glow-*` composes with `.glass` - the glass shadow stack is re-declared
      alongside the glow so the pane keeps its depth instead of losing it to the
      override. */
 
@@ -290,7 +290,7 @@
   /* --- Compromised-node halo ---------------------------------------------
      Two offset rings expanding out of a positioned parent. Because they scale
      and fade (never resize), the halo costs one compositor layer, not a reflow
-     per frame — which is what keeps it smooth over the live canvas. */
+     per frame - which is what keeps it smooth over the live canvas. */
 
   .halo-alert {
     position: relative;
@@ -393,7 +393,7 @@
     white-space: nowrap;
   }
 
-  /* Live status dot — the breathing opacity signals "polling", not "stuck". */
+  /* Live status dot - the breathing opacity signals "polling", not "stuck". */
   .pip {
     width: 6px;
     height: 6px;
@@ -445,7 +445,7 @@
 }
 
 /* =============================================================================
-   Keyframes — transform/opacity only (see the animation-budget note above).
+   Keyframes - transform/opacity only (see the animation-budget note above).
    `flow-dash-stroke` is the one exception: SVG dash motion has no transform
    equivalent, so it animates `stroke-dashoffset` on a property that does not
    trigger layout.

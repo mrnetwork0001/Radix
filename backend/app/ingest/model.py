@@ -94,7 +94,7 @@ class Advisory:
     """One OSV advisory, trimmed to what the graph needs.
 
     ``malicious`` is true for OSV ``MAL-`` records (the OpenSSF
-    malicious-packages corpus) — those set ``is_compromised`` on the Package.
+    malicious-packages corpus) - those set ``is_compromised`` on the Package.
     Ordinary vulnerabilities only contribute to ``risk_score``.
     """
 

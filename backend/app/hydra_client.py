@@ -3,14 +3,14 @@
 Everything Radix knows about the supply-chain graph comes through this module.
 It owns three responsibilities:
 
-1. **Transport** — a pooled HTTP session against the HydraDB JSON query API,
+1. **Transport** - a pooled HTTP session against the HydraDB JSON query API,
    with per-call latency measured around the wire request only (the API contract
    requires ``latency_ms`` to exclude FastAPI serialisation).
-2. **Decoding** — HydraDB returns *type-tagged* values (``{"type":"vertex_id",
+2. **Decoding** - HydraDB returns *type-tagged* values (``{"type":"vertex_id",
    "value":4}``) and, inside ``path`` values, a second and *different* wrapper
    form for properties (``{"String":"x"}``). Both are unwrapped here so no
    caller upstream ever sees a tag.
-3. **Traversal** — the four analysis queries plus the dashboard reads, shaped
+3. **Traversal** - the four analysis queries plus the dashboard reads, shaped
    around the engine constraints in ``docs/HYDRADB_CONTRACT.md``.
 
 Constraints that visibly bend the code (each verified by live probe, see the
@@ -18,8 +18,8 @@ module-level notes at each site):
 
 * Variable-length ``MATCH`` runs forward from a fixed source id only, so reverse
   closure walks the materialised ``DEPENDED_ON_BY`` edge.
-* The hop bound in ``*1..N`` must be a **literal** — ``*1..$depth`` is rejected
-  with "unbounded variable-length MATCH requires an explicit max hop" — so the
+* The hop bound in ``*1..N`` must be a **literal** - ``*1..$depth`` is rejected
+  with "unbounded variable-length MATCH requires an explicit max hop" - so the
   depth is validated as an int and interpolated, never parameterised.
 * There is no ``IN`` operator, so every "these ids" filter is a label scan
   joined client-side.
@@ -153,7 +153,7 @@ class PathRelationship:
     """A relationship inside a ``path`` value.
 
     ``id`` is HydraDB's *internal* edge id, which is not the seeder-assigned
-    ``id`` property — that one survives in :attr:`properties` under ``"id"``.
+    ``id`` property - that one survives in :attr:`properties` under ``"id"``.
     Verified by probe: an edge written with ``id: 8899001`` came back as
     ``{"id": 15, ..., "properties": {"id": {"Integer": 8899001}}}``.
     """
@@ -183,7 +183,7 @@ class Path:
 
     @property
     def node_ids(self) -> list[int]:
-        """The vertex-id chain, source first — what the animation consumes."""
+        """The vertex-id chain, source first - what the animation consumes."""
         return [node.id for node in self.nodes]
 
     @property
@@ -272,7 +272,7 @@ class QueryResult:
         return self.rows[0] if self.rows else None
 
     def scalar(self, column: str | None = None, default: Any = None) -> Any:
-        """First row's value for ``column`` (or the first column) — for counts."""
+        """First row's value for ``column`` (or the first column) - for counts."""
         if not self.rows:
             return default
         key = column if column is not None else (self.columns[0] if self.columns else None)
@@ -307,7 +307,7 @@ _LABEL_PROPERTIES: dict[str, tuple[str, ...]] = {
 }
 
 #: Edge properties projected per public edge type, per the API contract.
-#: ``DEPENDED_ON_BY`` / ``MAINTAINS`` are deliberately absent — they are
+#: ``DEPENDED_ON_BY`` / ``MAINTAINS`` are deliberately absent - they are
 #: internal inverses and are never returned to the frontend.
 _EDGE_PROPERTIES: dict[str, tuple[str, ...]] = {
     schema.DEPENDS_ON: ("constraint", "is_dev", "transitive_depth"),
@@ -337,7 +337,7 @@ def _node_dict(node_id: int, properties: Mapping[str, Any]) -> dict[str, Any]:
 def _clean_depth(depth: int) -> int:
     """Clamp and integer-ise a hop bound before it is interpolated into Cypher.
 
-    The bound cannot be a parameter, so it is inlined — this function is the
+    The bound cannot be a parameter, so it is inlined - this function is the
     only reason that is safe.
     """
     try:
@@ -661,8 +661,8 @@ class HydraClient:
         """Reverse dependency closure: everything that transitively depends on ``package_id``.
 
         This is Radix's headline query and the one the engine makes awkward.
-        ``MATCH (x)-[:DEPENDS_ON*1..6]->(victim {id: $pkg})`` is rejected —
-        variable-length traversal must start from a fixed source — so the walk
+        ``MATCH (x)-[:DEPENDS_ON*1..6]->(victim {id: $pkg})`` is rejected -
+        variable-length traversal must start from a fixed source - so the walk
         runs *forward* along the seeder's materialised ``DEPENDED_ON_BY``
         inverse, which arrives at the same set.
 
@@ -672,7 +672,7 @@ class HydraClient:
         package_id = int(package_id)
         hops = _clean_depth(depth)
 
-        # The hop bound must be a literal — `*1..$d` is rejected outright.
+        # The hop bound must be a literal - `*1..$d` is rejected outright.
         closure = self.execute(
             f"MATCH (victim {{id: $pkg}})-[:{schema.DEPENDED_ON_BY}*1..{hops}]->(dependent) "
             f"RETURN DISTINCT dependent.id AS id",
@@ -776,7 +776,7 @@ class HydraClient:
         sister_ids = {int(row["id"]) for row in outward.rows if row.get("id") is not None}
 
         # Hop 1, target-anchored: packages that name this maintainer. Legal
-        # because the pattern is fixed-length — only *variable*-length patterns
+        # because the pattern is fixed-length - only *variable*-length patterns
         # must be source-anchored. Also carries the MAINTAINED_BY `since` prop.
         inward = self.execute(
             f"MATCH (p:{schema.PACKAGE})-[r:{schema.MAINTAINED_BY}]->(m:{schema.MAINTAINER} {{id: $mid}}) "
@@ -796,7 +796,7 @@ class HydraClient:
         hydrated = self.get_nodes(ordered_ids)
 
         # Publication recency lives on Version nodes. One Version label scan,
-        # indexed client-side by the Version's `package_id` — cheaper and more
+        # indexed client-side by the Version's `package_id` - cheaper and more
         # robust than a per-package edge walk, and it works whichever way the
         # seeder orients the Package/Version relationship.
         #
@@ -918,7 +918,7 @@ class HydraClient:
             candidates.append(node)
 
         # Closest first. `min`/`max` are unavailable server-side anyway, so all
-        # ranking is Python's job — HydraDB traverses, Python scores.
+        # ranking is Python's job - HydraDB traverses, Python scores.
         candidates.sort(
             key=lambda c: (
                 -(c.get("similarity_score") or 0.0),
@@ -943,7 +943,7 @@ class HydraClient:
 
         Tier-1 status is a property of the Service nodes, and with no ``IN``
         operator there is no server-side way to fetch "criticality for these
-        ids" — so one Service label scan is joined against the exposed set in
+        ids" - so one Service label scan is joined against the exposed set in
         Python.
         """
         exposed_services = {int(sid) for sid in exposed_service_ids or ()}
@@ -1013,7 +1013,7 @@ class HydraClient:
 
         ``limit`` caps *nodes*; edges are then filtered to those whose endpoints
         both survived, so the frontend never receives a dangling line.
-        ``DEPENDED_ON_BY`` and ``MAINTAINS`` are excluded by construction — they
+        ``DEPENDED_ON_BY`` and ``MAINTAINS`` are excluded by construction - they
         are internal inverses and would draw every dependency twice.
         """
         latency_ms = 0.0
@@ -1073,7 +1073,7 @@ class HydraClient:
 
         Two edge reads plus a client-side join. Both orientations of the
         Service/Lockfile ``DEPENDS_ON`` edge are queried because that direction
-        is the seeder's convention, and a per-id fan-out is not an option — no
+        is the seeder's convention, and a per-id fan-out is not an option - no
         ``IN`` means "these service ids" cannot be expressed server-side.
         """
         wanted = {int(sid) for sid in service_ids or ()}

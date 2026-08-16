@@ -2,7 +2,7 @@
  * Radial gauge for the share of services reachable from the compromised
  * package.
  *
- * Pure SVG — no chart library. The 270° value arc is drawn with
+ * Pure SVG - no chart library. The 270° value arc is drawn with
  * `pathLength={100}`, which renormalises the path's own length to 100 user
  * units; the dash offset is then literally `100 - percentage`, with no arc-length
  * trigonometry. The sweep is driven by the same eased counter that prints the
@@ -90,7 +90,7 @@ export function BlastRadiusGauge({
   const tone = ACCENTS[severity.accent];
 
   // Hold every counter at zero for the first committed frame, so the arc always
-  // sweeps up from empty — even when the gauge only mounts once a closure exists.
+  // sweeps up from empty - even when the gauge only mounts once a closure exists.
   const swept = useEnterTransition();
   const shownPct = useCountUp(swept ? percentage : 0, 1100);
   const shownExposed = useCountUp(swept ? (radius?.exposed_services ?? 0) : 0, 1100);
@@ -270,7 +270,7 @@ export function BlastRadiusGauge({
       ) : (
         <p className="text-[10px] leading-relaxed text-ink-faint">
           Reverse closure over the materialised <span className="font-mono">DEPENDED_ON_BY</span>{' '}
-          edge — every service whose lockfile resolves the compromised package, at any depth.
+          edge - every service whose lockfile resolves the compromised package, at any depth.
         </p>
       )}
     </GlassCard>

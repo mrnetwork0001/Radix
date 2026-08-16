@@ -9,12 +9,12 @@
  *
  * Hop depth is derived from `closure.paths`, which the API contract guarantees
  * is ordered root-first (they come from `algo.SSpaths` over the materialised
- * `DEPENDED_ON_BY` edge — see docs/HYDRADB_CONTRACT.md §6). A node's depth is the
+ * `DEPENDED_ON_BY` edge - see docs/HYDRADB_CONTRACT.md §6). A node's depth is the
  * *shortest* route to it, so a package reachable in one hop ignites at hop 1 even
  * if a longer path to it also exists.
  *
  * `paths` is capped server-side (`pathCount`), so the closure can legitimately
- * contain ids that appear on no returned path. Those are not dropped — they are
+ * contain ids that appear on no returned path. Those are not dropped - they are
  * folded in at the final hop, which keeps `infectedIds` a faithful superset of
  * the blast radius once the animation settles.
  */
@@ -37,13 +37,13 @@ export interface UseBreachSimulationOptions {
 }
 
 export interface UseBreachSimulationResult {
-  /** Kick off a simulation. Never rejects — failures resolve `null` and set `error`. */
+  /** Kick off a simulation. Never rejects - failures resolve `null` and set `error`. */
   simulate: (input: BreachInput) => Promise<SimulateBreachResponse | null>;
   /** Clear everything and abort any in-flight request. */
   reset: () => void;
   /**
    * True from the moment `simulate` is called until the wavefront reaches the
-   * outermost hop. It gates the *animation* (particles, wavefront pulse) — the
+   * outermost hop. It gates the *animation* (particles, wavefront pulse) - the
    * infection itself stays lit afterwards, because the settled blast radius is
    * the finding the user came for.
    */

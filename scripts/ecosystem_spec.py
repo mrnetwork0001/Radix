@@ -5,7 +5,7 @@ This module is pure Python: it builds the whole graph in memory (nodes, edges,
 metrics) without touching HydraDB. ``seed_ecosystem.py`` is the thing that
 writes it. Keeping the two apart means the dataset can be reasoned about,
 snapshotted and unit-checked offline, and it makes the blast-radius tuning loop
-fast — the reverse closure is verified by a local BFS before a single row is
+fast - the reverse closure is verified by a local BFS before a single row is
 sent over the wire.
 
 Determinism
@@ -165,7 +165,7 @@ class Ecosystem:
 # the generated graph acyclic and makes variable-length traversal cheap.
 
 #: Allocated first and in this order so that ``tanstack-query`` lands on vertex
-#: id 1_000_004 — the id used throughout docs/API_CONTRACT.md examples.
+#: id 1_000_004 - the id used throughout docs/API_CONTRACT.md examples.
 TANSTACK_FAMILY = [
     "tanstack-table",
     "tanstack-router",
@@ -243,7 +243,7 @@ PYPI_BY_LAYER: dict[int, list[str]] = {
     4: ["pycparser", "zipp", "iniconfig", "pluggy", "exceptiongroup"],
 }
 
-#: Internal first-party packages — a monorepo's own libraries. Gives the
+#: Internal first-party packages - a monorepo's own libraries. Gives the
 #: services something plausible to depend on besides open source.
 INTERNAL_PREFIXES = ["@acme/"]
 INTERNAL_LAYER0 = [
@@ -286,7 +286,7 @@ INFECTION_CHAINS: list[tuple[str, list[str]]] = [
     ("session-store", ["deprecated-shim", "legacy-admin-bridge", "flag-console-ui", "config-panel-ui", "settings-forms", "form-state-bridge", "query-adapter-core"]),
 ]
 
-#: Infected packages that lead nowhere — ecosystem satellites of the victim.
+#: Infected packages that lead nowhere - ecosystem satellites of the victim.
 #: They fatten ``affected_package_ids`` without touching the service count.
 INFECTION_SATELLITES: list[tuple[str, str]] = [
     ("tanstack-query-devtools", COMPROMISED_PACKAGE),
@@ -315,7 +315,7 @@ INFECTION_CROSSLINKS: list[tuple[str, str]] = [
 ]
 
 TYPOSQUATS: list[tuple[str, str]] = [
-    # (name, attack technique) — all target tanstack-query.
+    # (name, attack technique) - all target tanstack-query.
     ("tanstackquery", "separator-omission"),
     ("tanstack-querry", "character-doubling"),
     ("tanstack-qeury", "transposition"),
@@ -431,7 +431,7 @@ class _Builder:
         HydraDB rejects target-anchored variable-length traversal, so the
         reverse question ("who depends on the compromised package?") is only
         answerable if the inverse edge physically exists. Every DEPENDS_ON in
-        this dataset is mirrored here — nowhere else creates one.
+        this dataset is mirrored here - nowhere else creates one.
         """
         if (src.id, dst.id) in self._dep_pairs or src.id == dst.id:
             return
@@ -501,7 +501,7 @@ class _Builder:
             self._add_package(name, "npm", 2, downloads_weekly=rng.randint(15_000, 400_000))
             self.tainted.add(name)
 
-        # Typosquats — low downloads, freshly published, high risk.
+        # Typosquats - low downloads, freshly published, high risk.
         for name, attack in TYPOSQUATS:
             distance = levenshtein(name, COMPROMISED_PACKAGE)
             self._add_package(
@@ -577,7 +577,7 @@ class _Builder:
         alex = self.maintainer[COMPROMISED_MAINTAINER]
         others = [self.maintainer[h] for h in MAINTAINER_HANDLES[1:TARGET_MAINTAINERS]]
 
-        # dev_alex owns the victim plus five sister packages — the set the
+        # dev_alex owns the victim plus five sister packages - the set the
         # maintainer sentinel walks via Maintainer -[:MAINTAINS]-> Package.
         alex_owned = [COMPROMISED_PACKAGE] + [n for n in TANSTACK_FAMILY if n != COMPROMISED_PACKAGE][:5]
         for name in alex_owned:
@@ -742,7 +742,7 @@ class _Builder:
                 for dst in rng.sample(pool, min(rng.randint(low, high), len(pool))):
                     self._depends(src, dst, _constraint(rng), is_dev=rng.random() < 0.18)
 
-        # Tainted packages also pull in ordinary open source — realistic, and
+        # Tainted packages also pull in ordinary open source - realistic, and
         # harmless because edges point *away* from the infected region.
         clean_pool = self._clean_candidates(min_layer=2)
         for name in sorted(self.tainted):
@@ -955,7 +955,7 @@ def _constraint(rng: random.Random) -> str:
 
 
 def hash_index(key: str, modulus: int) -> int:
-    """Stable index from a name — Python's ``hash`` is salted per process."""
+    """Stable index from a name - Python's ``hash`` is salted per process."""
     return int(_digest("idx", key)[:8], 16) % modulus
 
 

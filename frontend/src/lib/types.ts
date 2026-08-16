@@ -1,7 +1,7 @@
 /**
  * TypeScript mirror of `docs/API_CONTRACT.md`.
  *
- * This file is a transcription, not a design — field names, casing and optional
+ * This file is a transcription, not a design - field names, casing and optional
  * markers follow the frozen contract exactly. If something here disagrees with
  * that document, the document wins.
  *
@@ -29,7 +29,7 @@ export type EdgeType = 'DEPENDS_ON' | 'MAINTAINED_BY' | 'RESOLVED_IN' | 'TYPOSQU
 export type IsoTimestamp = string;
 
 export interface GraphNode {
-  /** HydraDB integer vertex id. Its magnitude also encodes the label — see backend/app/schema.py. */
+  /** HydraDB integer vertex id. Its magnitude also encodes the label - see backend/app/schema.py. */
   id: number;
   label: NodeLabel;
   /** Display name; present on every node type. */
@@ -205,7 +205,7 @@ export interface TyposquatsResponse {
 // POST /api/simulate-breach
 // ---------------------------------------------------------------------------
 
-/** Supply `package_id` or `package_name` — the backend accepts either. */
+/** Supply `package_id` or `package_name` - the backend accepts either. */
 export interface SimulateBreachRequest {
   package_id?: number;
   package_name?: string;

@@ -3,7 +3,7 @@
  * metrics.
  *
  * Every numeral eases to its new value (see `Stat` / `useCountUp`) because the
- * graph mutates in bursts — a breach simulation changes three tiles at once,
+ * graph mutates in bursts - a breach simulation changes three tiles at once,
  * and easing is what makes that read as a system reacting rather than a
  * re-render.
  */
@@ -111,7 +111,7 @@ function RadarSweep({ size, alerting }: { size: number; alerting: boolean }) {
         />
       ))}
 
-      {/* Contact ring — only while something is actually compromised. */}
+      {/* Contact ring - only while something is actually compromised. */}
       {alerting ? (
         <circle
           cx="50"
@@ -147,7 +147,7 @@ export function ThreatRadarHeader({
   const link = useMemo(() => {
     if (!health) return { accent: 'slate' as const, text: 'LINKING…', detail: 'contacting backend' };
     if (!health.hydra_ready)
-      return { accent: 'red' as const, text: 'HYDRA DOWN', detail: 'degraded — cached view' };
+      return { accent: 'red' as const, text: 'HYDRA DOWN', detail: 'degraded - cached view' };
     if (!health.seeded)
       return { accent: 'amber' as const, text: 'UNSEEDED', detail: 'graph is empty' };
     return {
@@ -171,7 +171,7 @@ export function ThreatRadarHeader({
     >
       {/* --- Identity --------------------------------------------------- */}
       <div className="flex min-w-0 items-center gap-4">
-        {/* The wordmark is the way back to the landing page — SPA-routed so
+        {/* The wordmark is the way back to the landing page - SPA-routed so
             the console's state dies with the unmount, exactly like a reload. */}
         <a
           href="/"
@@ -258,7 +258,7 @@ export function ThreatRadarHeader({
 }
 
 // ---------------------------------------------------------------------------
-// Glyphs — inline so the bundle carries no icon dependency.
+// Glyphs - inline so the bundle carries no icon dependency.
 // ---------------------------------------------------------------------------
 
 const glyph = {

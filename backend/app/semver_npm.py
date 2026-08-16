@@ -8,8 +8,8 @@ the two operations the closure needs:
     max_satisfying(versions, range_) -> str | None
 
 The desugaring pipeline mirrors node-semver's ``Range.parseRange`` step for
-step — hyphen replace, operator-whitespace trim, then per-token caret / tilde /
-x-range expansion into primitive comparators — so that edge behaviour (the
+step - hyphen replace, operator-whitespace trim, then per-token caret / tilde /
+x-range expansion into primitive comparators - so that edge behaviour (the
 ``^0.0.x`` leftmost-nonzero rule, ``<=1.2.x`` becoming ``<1.3.0-0``, the
 prerelease gate applying per ``||`` alternative) matches the real thing. The
 suite in ``backend/tests/test_semver_npm.py`` cross-checks every branch
@@ -58,7 +58,7 @@ _HYPHEN_RE = re.compile(rf"^{_XRANGE_PLAIN} - {_XRANGE_PLAIN}$")
 # node's COMPARATORTRIM / TILDETRIM / CARETTRIM passes.
 _OP_WS_RE = re.compile(r"([<>]=?|=|~>?|\^)\s+")
 # node strips build metadata from every range alternative before parsing
-# (Range.parseRange's BUILDSTRIPRE) — '1.2.3+b - 2' hyphens fine, '+b' is ANY.
+# (Range.parseRange's BUILDSTRIPRE) - '1.2.3+b - 2' hyphens fine, '+b' is ANY.
 _BUILD_STRIP_RE = re.compile(r"\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*")
 _WS_RE = re.compile(r"\s+")
 _COMPARATOR_RE = re.compile(r"^([<>]=?|=)?(.*)$", re.S)
@@ -72,7 +72,7 @@ class _Version(NamedTuple):
 
 
 class _Comparator(NamedTuple):
-    op: str          # '', '<', '<=', '>', '>=' — '' is equality
+    op: str          # '', '<', '<=', '>', '>=' - '' is equality
     version: _Version
 
 
@@ -179,7 +179,7 @@ def _replace_xrange(token: str) -> str:
     op = match[1] or ""
     major_s, minor_s, patch_s = match[2], match[3], match[4]
     # node's invalidXRangeOrder: an x left of a concrete part ('x.1', '1.x.3')
-    # makes the comparator invalid — returned untouched so parsing fails.
+    # makes the comparator invalid - returned untouched so parsing fails.
     # Only this pass checks it; carets/tildes/hyphens are more forgiving.
     if (_is_x(major_s) and not _is_x(minor_s)) or (
         _is_x(minor_s) and patch_s is not None and not _is_x(patch_s)
@@ -191,7 +191,7 @@ def _replace_xrange(token: str) -> str:
     if op == "=" and x_patch:
         op = ""
     if x_major:
-        # '*' / 'x' — anything; '>*' / '<*' — nothing can match.
+        # '*' / 'x' - anything; '>*' / '<*' - nothing can match.
         return "<0.0.0-0" if op in (">", "<") else "*"
     if op and x_patch:
         major = int(major_s)
@@ -217,7 +217,7 @@ def _replace_xrange(token: str) -> str:
         return f">={major_s}.0.0 <{int(major_s) + 1}.0.0-0"
     if x_patch:
         return f">={major_s}.{minor_s}.0 <{major_s}.{int(minor_s) + 1}.0-0"
-    return token  # a full comparator — nothing to desugar
+    return token  # a full comparator - nothing to desugar
 
 
 def _hyphen_replace(match: re.Match[str]) -> str:
@@ -256,7 +256,7 @@ def _hyphen_replace(match: re.Match[str]) -> str:
 
 def _parse_comparator(token: str) -> _Comparator | None:
     match = _COMPARATOR_RE.match(token)
-    if match is None:  # pragma: no cover — the pattern matches any string
+    if match is None:  # pragma: no cover - the pattern matches any string
         return None
     op = match[1] or ""
     if op == "=":

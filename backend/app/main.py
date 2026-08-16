@@ -1,10 +1,10 @@
-"""Radix REST API — the FastAPI surface described by ``docs/API_CONTRACT.md``.
+"""Radix REST API - the FastAPI surface described by ``docs/API_CONTRACT.md``.
 
 Seven endpoints, one HydraDB connection, and one rule that shapes all of them:
 ``latency_ms`` is the *traversal* cost. Every handler accumulates the wire
 latency reported by :mod:`app.hydra_client` and never brackets its own
 serialisation, because that number is shown in the UI as proof of how fast the
-graph engine answered — not how fast Python built a dict.
+graph engine answered - not how fast Python built a dict.
 
 Handlers return plain dicts rather than pydantic response models. The contract
 says type-specific node fields are *omitted* when not applicable
@@ -48,7 +48,7 @@ DEFAULT_WINDOW_HOURS = 48
 
 
 # --------------------------------------------------------------------------
-# Request models — the source of the contract's 422s
+# Request models - the source of the contract's 422s
 # --------------------------------------------------------------------------
 
 
@@ -144,14 +144,14 @@ def get_client() -> Iterator[HydraClient]:
 
 @app.exception_handler(HydraUnavailableError)
 async def _hydra_unavailable(request: Request, exc: HydraUnavailableError) -> JSONResponse:
-    """The engine is unreachable — 503, not a stack trace."""
+    """The engine is unreachable - 503, not a stack trace."""
     logger.warning("HydraDB unavailable for %s: %s", request.url.path, exc)
     return JSONResponse(status_code=503, content={"detail": "HydraDB is unavailable", "error": str(exc)})
 
 
 @app.exception_handler(HydraQueryError)
 async def _hydra_query_failed(request: Request, exc: HydraQueryError) -> JSONResponse:
-    """The engine rejected or failed a statement — an upstream fault, so 502.
+    """The engine rejected or failed a statement - an upstream fault, so 502.
 
     The rejection message is surfaced verbatim: HydraDB names the exact
     unsupported construct, and hiding that would waste the best diagnostic
@@ -250,7 +250,7 @@ def graph_full(
 ) -> dict[str, Any]:
     """The whole graph for the visualiser.
 
-    Internal inverse edges (``DEPENDED_ON_BY``, ``MAINTAINS``) are excluded —
+    Internal inverse edges (``DEPENDED_ON_BY``, ``MAINTAINS``) are excluded -
     they exist only to satisfy the forward-traversal rule and would draw every
     dependency twice.
     """
@@ -367,8 +367,8 @@ def typosquats(
 ) -> dict[str, Any]:
     """Impersonating packages, ranked closest-first.
 
-    Edit distance and similarity are computed at seed time — HydraDB has no
-    string functions — and stored on the ``TYPOSQUAT_OF`` edge.
+    Edit distance and similarity are computed at seed time - HydraDB has no
+    string functions - and stored on the ``TYPOSQUAT_OF`` edge.
     """
     report = analytics.typosquats(client, package_id)
     if report is None:
@@ -398,7 +398,7 @@ def generate_fix(
         if report:
             latency_ms += float(report["latency_ms"])
             handle = report["maintainer"].get("username") or report["maintainer"].get("name")
-            maintainer_note = f"`{handle}` — {report['risk_note']}"
+            maintainer_note = f"`{handle}` - {report['risk_note']}"
 
     typosquat_report = analytics.typosquats(client, package_id) or {"candidates": []}
     latency_ms += float(typosquat_report.get("latency_ms") or 0.0)
@@ -419,7 +419,7 @@ def generate_fix(
     fix["latency_ms"] = round(latency_ms + float(fix.get("latency_ms") or 0.0), 3)
 
     if fix.get("safe_version") is None and not fix.get("patches"):
-        # A package with no safe predecessor is a real answer, not an error —
+        # A package with no safe predecessor is a real answer, not an error -
         # the reason string explains it and the UI shows it as such.
         logger.info("no safe rollback target for package %s: %s", package_id, fix.get("reason"))
     return fix

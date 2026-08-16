@@ -2,7 +2,7 @@
  * Shared visual primitives for the Radix dashboard.
  *
  * Everything here is a thin wrapper over the design tokens declared in
- * `src/index.css` — this file adds no colours of its own. Tailwind's JIT only
+ * `src/index.css` - this file adds no colours of its own. Tailwind's JIT only
  * sees class names that appear *literally* in source, so the accent palette is
  * a static lookup table of complete class strings rather than something built
  * by string concatenation at render time.
@@ -33,7 +33,7 @@ import type { NodeLabel } from '@/lib/types';
 
 export type ClassValue = string | false | null | undefined;
 
-/** Join truthy class fragments. Deliberately tiny — no `clsx` dependency. */
+/** Join truthy class fragments. Deliberately tiny - no `clsx` dependency. */
 export function cx(...parts: ClassValue[]): string {
   return parts.filter(Boolean).join(' ');
 }
@@ -151,13 +151,13 @@ function formatterFor(decimals: number): Intl.NumberFormat {
 
 /** Grouped fixed-precision number, e.g. `1,340` or `24.1`. */
 export function formatNumber(value: number, decimals = 0): string {
-  if (!Number.isFinite(value)) return '—';
+  if (!Number.isFinite(value)) return '-';
   return formatterFor(decimals).format(value);
 }
 
 /** Short magnitude form for large counts: `4.2M`, `18.4k`. */
 export function formatCompact(value: number): string {
-  if (!Number.isFinite(value)) return '—';
+  if (!Number.isFinite(value)) return '-';
   const abs = Math.abs(value);
   if (abs >= 1e9) return `${formatNumber(value / 1e9, 1)}B`;
   if (abs >= 1e6) return `${formatNumber(value / 1e6, 1)}M`;
@@ -167,7 +167,7 @@ export function formatCompact(value: number): string {
 
 /** `2026-08-11T04:12:00Z` → `11 Aug 2026 · 04:12 UTC`. Returns the input when unparseable. */
 export function formatTimestamp(iso: string | undefined): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const at = new Date(iso);
   if (Number.isNaN(at.getTime())) return iso;
   const date = at.toLocaleDateString('en-GB', {
@@ -270,7 +270,7 @@ const FOCUSABLE_SELECTOR = [
 /**
  * Confine Tab/Shift+Tab to the returned element while `active`, move focus in
  * on open, and restore it to the previously focused element on close.
- * For modal dialogs only — a non-modal panel must not trap focus.
+ * For modal dialogs only - a non-modal panel must not trap focus.
  */
 export function useFocusTrap<T extends HTMLElement>(active: boolean): RefObject<T> {
   const containerRef = useRef<T>(null);
@@ -624,7 +624,7 @@ export function MicroLabel({ children, className }: { children: ReactNode; class
 }
 
 export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** Required — icon-only controls have no accessible name otherwise. */
+  /** Required - icon-only controls have no accessible name otherwise. */
   'aria-label': string;
   children: ReactNode;
 }

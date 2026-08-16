@@ -1,4 +1,4 @@
-"""Radix sentinel — polls OSV for new advisories against every package in the graph.
+"""Radix sentinel - polls OSV for new advisories against every package in the graph.
 
     python -m sentinel.watcher --interval 900 [--once] [--dry-run]
 
@@ -9,7 +9,7 @@ process is stateless and safe to restart at any moment.
 
 Operational behaviour:
 
-* Structured, timestamped logging to stdout — journald/`docker logs` friendly.
+* Structured, timestamped logging to stdout - journald/`docker logs` friendly.
 * A failed cycle never kills the loop; retries back off exponentially
   (30 s → 1 h cap) and reset on the next success.
 * SIGTERM/SIGINT exit cleanly, even mid-sleep.
@@ -19,7 +19,7 @@ Operational behaviour:
 
 Config via env (see ``docs/INGEST_CONTRACT.md``): ``HYDRA_HTTP_URL``,
 ``HYDRA_TOKEN``, ``HYDRA_NAMESPACE``, ``SENTINEL_INTERVAL``, and optional
-``SENTINEL_REPOS`` — a comma-separated list of paths/git URLs re-scanned every
+``SENTINEL_REPOS`` - a comma-separated list of paths/git URLs re-scanned every
 cycle through the full ingest pipeline.
 """
 
@@ -111,7 +111,7 @@ def enumerate_packages(client: HydraClient) -> list[tuple[str, str]]:
 
 
 def threat_counts(client: HydraClient) -> tuple[int, int]:
-    """``(compromised packages, windowed versions)`` — the delta line's basis."""
+    """``(compromised packages, windowed versions)`` - the delta line's basis."""
     compromised = client.execute(
         f"MATCH (n:{schema.PACKAGE}) WHERE n.is_compromised = true RETURN count(*) AS c"
     )
@@ -131,7 +131,7 @@ def run_cycle(client: HydraClient, osv_client: "OsvClient", writer: "GraphWriter
     packages = enumerate_packages(client)
     if not packages:
         log.info(
-            "namespace %r holds no packages — nothing to query (seed or ingest first)",
+            "namespace %r holds no packages - nothing to query (seed or ingest first)",
             client.config.namespace,
         )
         return
@@ -323,7 +323,7 @@ def main(argv: list[str] | None = None) -> int:
             break
 
     if shutdown.signal_name:
-        log.info("received %s — exiting cleanly", shutdown.signal_name)
+        log.info("received %s - exiting cleanly", shutdown.signal_name)
     client.close()
     return exit_code if args.once else 0
 

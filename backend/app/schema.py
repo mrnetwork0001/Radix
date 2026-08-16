@@ -37,8 +37,8 @@ TYPOSQUAT_OF = "TYPOSQUAT_OF"
 #: Materialised inverse of :data:`DEPENDS_ON`.
 #:
 #: HydraDB rejects target-anchored variable-length traversal ("variable-length
-#: MATCH requires a fixed source id"), but reverse transitive closure — who
-#: depends on the compromised package — is exactly that shape. Mirroring every
+#: MATCH requires a fixed source id"), but reverse transitive closure - who
+#: depends on the compromised package - is exactly that shape. Mirroring every
 #: dependency edge turns the reverse question into a forward traversal.
 DEPENDED_ON_BY = "DEPENDED_ON_BY"
 

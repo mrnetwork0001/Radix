@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """Ingest real repositories into Radix.
 
-    python scripts/ingest.py <path-or-git-url> [...] [--namespace radix-live]
+    python scripts/ingest.py <path-or-git-url> [...] [--namespace radix/live]
 
 Pipeline per target: scan lockfiles -> enrich from the npm registry -> pull OSV
 advisories -> write the graph. Everything is idempotent, so re-running after a
 new commit or a new advisory only writes the delta.
 
-The demo world lives in namespace ``radix``; real data defaults to
-``radix-live`` so the two never mix. Point the backend at real data with
-``HYDRA_NAMESPACE=radix-live``.
+The demo world lives in namespace ``radix``; real data defaults to the
+``radix/live`` sub-scope so the two never mix. Point the backend at real data
+with ``HYDRA_NAMESPACE=radix/live``.
 """
 
 from __future__ import annotations
@@ -62,7 +62,7 @@ def main() -> int:
         print(f"── scanning {target}")
         scan = scan_source(target)
         if not scan.lockfiles:
-            print("   no lockfiles found — nothing to ingest")
+            print("   no lockfiles found - nothing to ingest")
             continue
         for lf in scan.lockfiles:
             print(f"   {lf.path}: {len(lf.releases)} releases, {len(lf.edges)} edges ({lf.kind})")

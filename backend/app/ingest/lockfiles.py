@@ -2,15 +2,15 @@
 
 Covers the four lockfile dialects that dominate real JS repos:
 
-* ``package-lock.json`` v2/v3 — the flat ``packages`` map, resolved with npm's
+* ``package-lock.json`` v2/v3 - the flat ``packages`` map, resolved with npm's
   nearest-enclosing-``node_modules`` rule;
-* ``package-lock.json`` v1 — the nested ``dependencies`` tree with ``requires``;
-* ``yarn.lock`` v1 — yarn's custom block format, parsed here directly;
-* ``pnpm-lock.yaml`` v6/v9 — ``importers`` for root edges, ``packages`` /
+* ``package-lock.json`` v1 - the nested ``dependencies`` tree with ``requires``;
+* ``yarn.lock`` v1 - yarn's custom block format, parsed here directly;
+* ``pnpm-lock.yaml`` v6/v9 - ``importers`` for root edges, ``packages`` /
   ``snapshots`` for releases and edges, both key styles (``/pkg@ver`` and
   ``pkg@ver``).
 
-Parsers are pure — no network, no HydraDB — and normalise everything into the
+Parsers are pure - no network, no HydraDB - and normalise everything into the
 frozen IR in :mod:`app.ingest.model`.
 """
 

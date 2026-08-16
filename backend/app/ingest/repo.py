@@ -3,7 +3,7 @@
 ``scan_source`` accepts a local directory or a git URL. Local paths are scanned
 in place and never modified; URLs are shallow-cloned into a working directory
 and the clone is removed once parsed. Only :mod:`app.ingest.lockfiles` looks at
-file contents — this module just gets a tree on disk and records provenance.
+file contents - this module just gets a tree on disk and records provenance.
 """
 
 from __future__ import annotations

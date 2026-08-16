@@ -1,6 +1,6 @@
 """OSV.dev client: which advisories touch which packages.
 
-Network-only module — it produces :class:`Advisory` and never touches HydraDB.
+Network-only module - it produces :class:`Advisory` and never touches HydraDB.
 
 * ``POST /v1/querybatch`` maps packages to vulnerability *ids* (chunks of
   ≤1000 queries; per-query pagination via ``next_page_token``).
@@ -81,7 +81,7 @@ def _pairs_from_events(events: list[dict]) -> list[tuple[str | None, str | None]
     """Fold an OSV SEMVER event list into ``(introduced, fixed)`` pairs.
 
     OSV guarantees events sorted by version within a range. A ``last_affected``
-    event closes its window with ``fixed=None`` — the IR has no
+    event closes its window with ``fixed=None`` - the IR has no
     "last affected" slot, and an open upper bound overstates exposure rather
     than understating it, which is the right failure direction for a sentinel.
     """
@@ -179,11 +179,11 @@ class OsvClient:
     def query_batch(self, packages: Iterable[tuple[str, str]]) -> dict[str, list[str]]:
         """Vulnerability ids per package.
 
-        Keys are ``f"{ecosystem}:{name}"`` — the same canonical form as
-        ``schema.package_key`` — because the contract types the mapping as
+        Keys are ``f"{ecosystem}:{name}"`` - the same canonical form as
+        ``schema.package_key`` - because the contract types the mapping as
         ``dict[str, list[str]]``. Every queried package gets a key; a clean
         package maps to ``[]``. A chunk that still fails after retries is
-        skipped (its packages simply stay empty) — advisory lookup never
+        skipped (its packages simply stay empty) - advisory lookup never
         crashes the pipeline.
         """
         ordered: list[tuple[str, str]] = []
@@ -196,7 +196,7 @@ class OsvClient:
 
         results: dict[str, list[str]] = {f"{eco}:{name}": [] for eco, name in ordered}
 
-        # (ecosystem, name, page_token) — paginated queries are re-queued with
+        # (ecosystem, name, page_token) - paginated queries are re-queued with
         # their next_page_token until OSV stops handing tokens back.
         queue: list[tuple[str, str, str | None]] = [(eco, name, None) for eco, name in ordered]
         while queue:
@@ -242,7 +242,7 @@ class OsvClient:
         """One advisory by id, mapped to the IR; ``None`` when unavailable.
 
         ``ecosystem``/``package`` scope the ``affected[]`` entries to the
-        package that surfaced the id — an OSV record can span packages.
+        package that surfaced the id - an OSV record can span packages.
         Called bare (contract signature), the record's first ``affected``
         entry names the package.
         """
@@ -259,7 +259,7 @@ class OsvClient:
             if isinstance(record, dict) and record.get("id"):
                 return record
         except (OSError, ValueError):
-            pass  # absent or corrupt cache entry — refetch below
+            pass  # absent or corrupt cache entry - refetch below
 
         url = f"{_OSV_API}/vulns/{urllib.parse.quote(vuln_id, safe='')}"
         response = _request_with_retry(self._session, "GET", url)
@@ -282,7 +282,7 @@ class OsvClient:
     def advisories_for(self, packages: Iterable[tuple[str, str]]) -> list[Advisory]:
         """All advisories touching the given packages, hydrated once per id.
 
-        Ids surfacing under several queried packages are deduplicated — the
+        Ids surfacing under several queried packages are deduplicated - the
         first package that surfaced an id is the one its ``affected[]``
         entries are scoped to.
         """

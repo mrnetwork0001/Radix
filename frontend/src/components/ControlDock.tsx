@@ -95,7 +95,7 @@ export function ControlDock({
           'disabled:pointer-events-none disabled:opacity-60',
         )}
       >
-        {/* Sheen wipe on hover — transform only, so it composites. */}
+        {/* Sheen wipe on hover - transform only, so it composites. */}
         <span
           aria-hidden="true"
           className={cx(
@@ -195,7 +195,7 @@ export function ControlDock({
           ))}
         </div>
 
-        {/* Why the bound exists at all — HydraDB rejects `*` and `*1..`. */}
+        {/* Why the bound exists at all - HydraDB rejects `*` and `*1..`. */}
         <p className="mt-2 text-[10px] leading-relaxed text-ink-faint">
           HydraDB requires a finite maximum on variable-length traversal, so the closure walk is
           always bounded.
@@ -231,7 +231,7 @@ export function ControlDock({
             role="status"
             aria-live="polite"
           >
-            {status ?? 'idle — awaiting operator input'}
+            {status ?? 'idle - awaiting operator input'}
           </p>
         </div>
       </div>

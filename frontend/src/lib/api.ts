@@ -3,7 +3,7 @@
  *
  * All requests are relative to `/api`, which Vite proxies to
  * `http://localhost:8000` in dev (see vite.config.ts) and a reverse proxy
- * serves in production — so no absolute backend URL is ever compiled in.
+ * serves in production - so no absolute backend URL is ever compiled in.
  *
  * Every call:
  *   - aborts after `REQUEST_TIMEOUT_MS` (a HydraDB traversal that has not
@@ -60,7 +60,7 @@ export class ApiError extends Error {
     this.body = opts.body;
   }
 
-  /** `0` is reserved for transport failures — the request never reached the backend. */
+  /** `0` is reserved for transport failures - the request never reached the backend. */
   get isNetworkError(): boolean {
     return this.status === 0;
   }
@@ -175,7 +175,7 @@ async function request<T>(path: string, init: RequestInit = {}, options: Request
         cause,
       });
     }
-    // A caller-initiated abort is not an error condition — re-throw it as-is so
+    // A caller-initiated abort is not an error condition - re-throw it as-is so
     // effects can filter it with `isAbortError`.
     if (external?.aborted) throw cause;
     throw new ApiError(`Cannot reach the Radix backend at ${url}`, {
@@ -231,7 +231,7 @@ function clampDepth(depth: number): number {
 /**
  * `GET /api/health`
  *
- * Throws only when the backend itself is unreachable — when HydraDB is down but
+ * Throws only when the backend itself is unreachable - when HydraDB is down but
  * the API is up, this resolves with `hydra_ready: false`.
  */
 export function getHealth(options?: RequestOptions): Promise<HealthResponse> {
@@ -241,7 +241,7 @@ export function getHealth(options?: RequestOptions): Promise<HealthResponse> {
 }
 
 /**
- * Health check that never rejects — for the always-on status pill, where an
+ * Health check that never rejects - for the always-on status pill, where an
  * unreachable backend is a state to render, not an exception to handle.
  */
 export async function getHealthOrDegraded(options?: RequestOptions): Promise<HealthResponse> {
@@ -254,7 +254,7 @@ export async function getHealthOrDegraded(options?: RequestOptions): Promise<Hea
 }
 
 /**
- * `GET /api/graph/full` — the whole dependency graph for the visualiser.
+ * `GET /api/graph/full` - the whole dependency graph for the visualiser.
  * `limit` caps returned nodes; omit it for everything.
  */
 export function getFullGraph(
@@ -268,12 +268,12 @@ export function getFullGraph(
 }
 
 /**
- * `GET /api/closure/{package_id}` — transitive **reverse** dependency closure.
+ * `GET /api/closure/{package_id}` - transitive **reverse** dependency closure.
  *
  * Server-side this is a forward walk over the materialised `DEPENDED_ON_BY`
  * edge, because HydraDB rejects target-anchored variable-length traversal
  * (docs/HYDRADB_CONTRACT.md §3). `depth` maps to that traversal's `*1..N` bound,
- * which the engine requires to be finite — hence the 1–8 clamp.
+ * which the engine requires to be finite - hence the 1–8 clamp.
  */
 export function getClosure(
   packageId: number,
@@ -288,7 +288,7 @@ export function getClosure(
 }
 
 /**
- * `POST /api/simulate-breach` — the headline action.
+ * `POST /api/simulate-breach` - the headline action.
  *
  * Identify the package by `package_id` or `package_name`; supplying neither is
  * rejected here rather than at the backend.
@@ -310,7 +310,7 @@ export function simulateBreach(
 }
 
 /**
- * `GET /api/maintainer-risk/{maintainer_id}` — two-hop maintainer subgraph
+ * `GET /api/maintainer-risk/{maintainer_id}` - two-hop maintainer subgraph
  * (`Package → MAINTAINED_BY → Maintainer → MAINTAINS → Other_Package`).
  */
 export function getMaintainerRisk(
@@ -321,14 +321,14 @@ export function getMaintainerRisk(
   return getJson<MaintainerRiskResponse>(`/maintainer-risk/${maintainerId}`, options);
 }
 
-/** `GET /api/typosquats/{package_id}` — near-name impostors of a package. */
+/** `GET /api/typosquats/{package_id}` - near-name impostors of a package. */
 export function getTyposquats(packageId: number, options?: RequestOptions): Promise<TyposquatsResponse> {
   assertVertexId(packageId, 'packageId');
   return getJson<TyposquatsResponse>(`/typosquats/${packageId}`, options);
 }
 
 /**
- * `POST /api/generate-fix` — remediation patches for the exposed services.
+ * `POST /api/generate-fix` - remediation patches for the exposed services.
  * Omit `service_ids` to patch every exposed service.
  */
 export function generateFix(

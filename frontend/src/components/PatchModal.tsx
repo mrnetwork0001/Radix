@@ -2,7 +2,7 @@
  * Modal presenting the generated remediation PR.
  *
  * The backend returns `diff` as a ready-to-render unified diff string
- * (docs/API_CONTRACT.md), so nothing here reformats it — the parser below only
+ * (docs/API_CONTRACT.md), so nothing here reformats it - the parser below only
  * classifies each line and rebuilds the hunk line numbers for the gutter, and
  * the text itself is printed verbatim.
  *
@@ -136,7 +136,7 @@ function DiffView({ diff }: { diff: string }) {
 
 const JSON_TOKEN = /("(?:[^"\\]|\\.)*"\s*:)|("(?:[^"\\]|\\.)*")/g;
 
-/** Minimal two-token colouriser — enough for the flat `overrides` object. */
+/** Minimal two-token colouriser - enough for the flat `overrides` object. */
 function JsonLine({ text }: { text: string }) {
   const parts: Array<{ text: string; tone: string }> = [];
   let cursor = 0;
@@ -295,7 +295,7 @@ export function PatchModal({ patch, open, onClose }: PatchModalProps) {
               {patch.pr_title}
             </h2>
             <p className="mt-1 text-xs leading-relaxed text-ink-muted">
-              <span className="text-toxic">{patch.safe_version}</span> — {patch.reason}
+              <span className="text-toxic">{patch.safe_version}</span> - {patch.reason}
             </p>
           </div>
 
@@ -357,7 +357,7 @@ export function PatchModal({ patch, open, onClose }: PatchModalProps) {
 
               <section>
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <MicroLabel>package.json — npm overrides</MicroLabel>
+                  <MicroLabel>package.json - npm overrides</MicroLabel>
                   <CopyButton
                     text={JSON.stringify({ overrides: current.overrides }, null, 2)}
                     label="the npm overrides block"
@@ -380,7 +380,7 @@ export function PatchModal({ patch, open, onClose }: PatchModalProps) {
         {/* --- Footer ---------------------------------------------------- */}
         <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-5 py-3">
           <span className="text-2xs text-ink-faint">
-            Generated from the reverse-closure result — no file is written by Radix.
+            Generated from the reverse-closure result - no file is written by Radix.
           </span>
           <div className="flex items-center gap-2">
             <CopyButton text={patch.pr_body} label="the PR body" />

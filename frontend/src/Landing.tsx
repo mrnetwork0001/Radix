@@ -3,7 +3,7 @@
  *
  * Served at `/`; the dashboard lives behind the Launch App button at `/app`
  * and is code-split so none of its weight (force-graph included) loads here.
- * Every number on this page is a real measurement from the verification runs —
+ * Every number on this page is a real measurement from the verification runs -
  * the page's job is to make the claim, the console's job is to prove it.
  */
 
@@ -118,7 +118,7 @@ function Hero({ onLaunch }: { onLaunch: () => void }) {
 
         <p className="mt-6 max-w-xl text-base leading-relaxed text-ink-muted">
           When a compromised release lands on npm, the question is not what the
-          package looks like — it is which of your services are transitively
+          package looks like - it is which of your services are transitively
           exposed, through which routes, and what to pin right now. That is a
           graph traversal, and Radix runs it on{' '}
           <a
@@ -129,7 +129,7 @@ function Hero({ onLaunch }: { onLaunch: () => void }) {
           >
             HydraDB
           </a>{' '}
-          — reverse dependency closure, maintainer co-authorship, typosquat
+          - reverse dependency closure, maintainer co-authorship, typosquat
           proximity, and a ready-to-open lockfile patch.
         </p>
 
@@ -256,7 +256,7 @@ function BlastRadiusFigure() {
 
 const STATS = [
   { value: '~6 ms', label: 'reverse closure, depth 6', accent: 'text-cyan' },
-  { value: '35%', label: 'blast radius pinpointed — 7 of 20 services', accent: 'text-alert' },
+  { value: '35%', label: 'blast radius pinpointed - 7 of 20 services', accent: 'text-alert' },
   { value: '82', label: 'infection paths returned, longest 7 hops', accent: 'text-toxic' },
   { value: '0.31 s', label: 'to seed 502 nodes and 3,877 edges', accent: 'text-amber' },
 ] as const;
@@ -273,7 +273,7 @@ function MeasuredStats() {
         ))}
       </GlassCard>
       <p className="label-micro mt-3 text-center text-ink-faint">
-        measured on the bundled 502-node incident graph — reproduce with{' '}
+        measured on the bundled 502-node incident graph - reproduce with{' '}
         <code className="text-ink-muted">make up && make seed && make verify</code>
       </p>
     </section>
@@ -287,25 +287,25 @@ const FEATURES = [
     title: 'Reverse closure engine',
     accent: 'cyan',
     glyph: RadiatingGlyph,
-    body: 'One traversal answers the incident question: every package, service and lockfile transitively exposed to a compromised release — with the exact hop-by-hop routes, not a similarity score.',
+    body: 'One traversal answers the incident question: every package, service and lockfile transitively exposed to a compromised release - with the exact hop-by-hop routes, not a similarity score.',
   },
   {
     title: 'Maintainer sentinel',
     accent: 'violet',
     glyph: KeyGlyph,
-    body: 'A stolen signing key rarely ships one package. Radix walks the co-authorship subgraph and flags the sister packages published inside the breach window — before anyone reports them.',
+    body: 'A stolen signing key rarely ships one package. Radix walks the co-authorship subgraph and flags the sister packages published inside the breach window - before anyone reports them.',
   },
   {
     title: 'Typosquat radar',
     accent: 'amber',
     glyph: MaskGlyph,
-    body: 'Levenshtein and homoglyph neighbours of your high-download dependencies, precomputed into the graph — including the Cyrillic look-alikes your eyes cannot catch in a diff.',
+    body: 'Levenshtein and homoglyph neighbours of your high-download dependencies, precomputed into the graph - including the Cyrillic look-alikes your eyes cannot catch in a diff.',
   },
   {
     title: '1-click remediation',
     accent: 'green',
     glyph: PatchGlyph,
-    body: 'The last clean release, selected by real semver ordering, rendered as a unified lockfile diff with npm overrides — a PR body ready to paste, generated straight from the graph.',
+    body: 'The last clean release, selected by real semver ordering, rendered as a unified lockfile diff with npm overrides - a PR body ready to paste, generated straight from the graph.',
   },
 ] as const;
 
@@ -315,7 +315,7 @@ function Features() {
       <SectionHeading
         kicker="what it does"
         title="Four questions, one graph"
-        sub="Every capability is a traversal over the same five node types — packages, versions, maintainers, services, lockfiles."
+        sub="Every capability is a traversal over the same five node types - packages, versions, maintainers, services, lockfiles."
       />
       <div className="grid gap-4 sm:grid-cols-2">
         {FEATURES.map((f) => (
@@ -358,7 +358,7 @@ function GraphNotVector() {
         <GlassCard className="p-6 opacity-80">
           <div className="label-micro mb-4 text-ink-faint">vector search</div>
           <ul className="space-y-3 text-sm text-ink-muted">
-            <CompareRow no>“what looks similar” — ranked, approximate</CompareRow>
+            <CompareRow no>“what looks similar” - ranked, approximate</CompareRow>
             <CompareRow no>transitive depth is not representable</CompareRow>
             <CompareRow no>92% confidence still means checking every service by hand</CompareRow>
             <CompareRow no>the infection route is lost entirely</CompareRow>
@@ -367,12 +367,12 @@ function GraphNotVector() {
         <GlassCard accent="cyan" glow className="p-6">
           <div className="label-micro mb-4 text-cyan">HydraDB traversal</div>
           <ul className="space-y-3 text-sm text-slate-300">
-            <CompareRow>“what is actually reachable” — an exact set</CompareRow>
+            <CompareRow>“what is actually reachable” - an exact set</CompareRow>
             <CompareRow>
               native multi-hop:{' '}
               <code className="font-mono text-xs text-cyan">[:DEPENDED_ON_BY*1..6]</code>
             </CompareRow>
-            <CompareRow>a service is exposed or it is not — no triage list</CompareRow>
+            <CompareRow>a service is exposed or it is not - no triage list</CompareRow>
             <CompareRow>whole paths returned, ready to animate and to audit</CompareRow>
           </ul>
         </GlassCard>
@@ -401,12 +401,12 @@ const STEPS = [
   {
     n: '01',
     title: 'Ingest',
-    body: 'Point Radix at your repos. Lockfiles (npm, yarn, pnpm) become a graph of packages, versions, maintainers and services — enriched from the registry and the OSV advisory feed.',
+    body: 'Point Radix at your repos. Lockfiles (npm, yarn, pnpm) become a graph of packages, versions, maintainers and services - enriched from the registry and the OSV advisory feed.',
   },
   {
     n: '02',
     title: 'Traverse',
-    body: 'A compromise fires one bounded traversal in HydraDB. The reverse closure, the maintainer subgraph and the typosquat neighbourhood come back in milliseconds, as data — not a report.',
+    body: 'A compromise fires one bounded traversal in HydraDB. The reverse closure, the maintainer subgraph and the typosquat neighbourhood come back in milliseconds, as data - not a report.',
   },
   {
     n: '03',
@@ -527,7 +527,7 @@ function Footer({ onLaunch }: { onLaunch: () => void }) {
           <p className="mt-5 max-w-sm text-sm leading-relaxed text-ink-muted">
             Graph-native supply-chain sentinel on HydraDB. Reverse dependency
             closure, maintainer co-authorship risk, typosquat proximity and
-            one-click lockfile remediation — computed in milliseconds, from
+            one-click lockfile remediation - computed in milliseconds, from
             your own lockfiles.
           </p>
           <div className="mt-6">
@@ -608,7 +608,7 @@ function Wordmark({ className }: { className?: string }) {
   );
 }
 
-/* Glyphs — 24×24 stroke icons, currentColor so the accent wrapper tints them. */
+/* Glyphs - 24×24 stroke icons, currentColor so the accent wrapper tints them. */
 
 function RadiatingGlyph(props: SVGProps<SVGSVGElement>) {
   return (

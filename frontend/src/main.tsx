@@ -20,7 +20,7 @@ function Root() {
   }, []);
 
   useEffect(() => {
-    document.title = inApp ? 'Radix Console' : 'Radix — Supply Chain Sentinel';
+    document.title = inApp ? 'Radix Console' : 'Radix - Supply Chain Sentinel';
   }, [inApp]);
 
   return (

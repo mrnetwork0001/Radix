@@ -7,7 +7,7 @@
  *     `vx`, `vy` onto each node and replaces a link's `source`/`target` ids with
  *     the node objects themselves. Rebuilding those objects on a re-render would
  *     throw away the settled layout and restart the simulation, so the transform
- *     is memoised on `data` identity alone — never on the animation props, which
+ *     is memoised on `data` identity alone - never on the animation props, which
  *     change many times per breach.
  *
  *  2. **The paint callbacks run per node, per frame.** At ~500 nodes and 60fps
@@ -23,7 +23,7 @@
  *     a second and stall the force simulation.
  *
  * One graph-direction subtlety is worth stating plainly: `DEPENDS_ON` points
- * *dependent → dependency*, but an infection travels *dependency → dependent* —
+ * *dependent → dependency*, but an infection travels *dependency → dependent* -
  * the opposite way along the same edge. Infection particles therefore run with a
  * negative `linkDirectionalParticleSpeed`, which force-graph supports natively
  * (it seeds `__progressRatio` at 1 and wraps below 0), rather than by inventing
@@ -44,7 +44,7 @@ export type { GraphPayload };
 // ---------------------------------------------------------------------------
 // Mirrors the `--*` tokens in src/index.css. The canvas cannot read Tailwind
 // classes or resolve CSS custom properties cheaply per frame, so the literals
-// live here as pre-built rgba strings — building them per node per frame is a
+// live here as pre-built rgba strings - building them per node per frame is a
 // measurable cost at 500 nodes.
 
 const RGB: Record<string, readonly [number, number, number]> = {
@@ -128,7 +128,7 @@ const TAU = Math.PI * 2;
 
 /**
  * A node as the canvas holds it. `x`/`y`/`vx`/`vy` are absent here because
- * force-graph adds them by mutation — declared optional so the paint code can
+ * force-graph adds them by mutation - declared optional so the paint code can
  * read them without a cast.
  */
 interface RadixNode {
@@ -239,14 +239,14 @@ function buildTooltip(node: GraphNode): string {
 /**
  * Turn the API payload into force-graph's shape.
  *
- * Runs once per payload. Every value the paint loop needs — colour strings,
- * radius, tooltip — is resolved here so the per-frame callbacks only read.
+ * Runs once per payload. Every value the paint loop needs - colour strings,
+ * radius, tooltip - is resolved here so the per-frame callbacks only read.
  */
 function buildModel(payload: GraphPayload | null): GraphModel {
   if (!payload || payload.nodes.length === 0) return EMPTY_MODEL;
 
   // Importance is driven by how many things depend on a node, which is the
-  // in-degree of DEPENDS_ON — the same quantity the blast radius measures.
+  // in-degree of DEPENDS_ON - the same quantity the blast radius measures.
   const dependents = new Map<number, number>();
   for (const edge of payload.edges) {
     if (edge.type !== 'DEPENDS_ON') continue;
@@ -474,7 +474,7 @@ export function GraphCanvas({
     return depths;
   }, [infectionPaths, rootId]);
 
-  /** Outermost hop currently alight — those nodes get the leading-edge flare. */
+  /** Outermost hop currently alight - those nodes get the leading-edge flare. */
   const wavefrontDepth = useMemo(() => {
     let deepest = -1;
     for (const id of infectedIds) {
@@ -721,7 +721,7 @@ export function GraphCanvas({
   // prop, which only fires when the accessor's *identity* changes. Reading the
   // infected set from a ref would keep this closure stable, the accessor would
   // never re-run, and the particles would stay frozen at the value computed on
-  // hop -1 — that is, none, for the whole simulation. Re-creating a handful of
+  // hop -1 - that is, none, for the whole simulation. Re-creating a handful of
   // closures once per hop is the cost of the routes lighting up at all.
   const infectionDirection = useCallback(
     (link: RadixLink): number => {
@@ -853,7 +853,7 @@ export function GraphCanvas({
   const ready = size.width > 0 && size.height > 0;
 
   // The halo and dash animate on their own clock, so the render loop may not
-  // idle while anything is alight — `autoPauseRedraw` would freeze mid-pulse.
+  // idle while anything is alight - `autoPauseRedraw` would freeze mid-pulse.
   const animating = rootId !== null || isSimulating || infectedIds.size > 0;
 
   return (

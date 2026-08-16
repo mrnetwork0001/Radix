@@ -4,7 +4,7 @@ HydraDB does the traversal; this module does the arithmetic. That split is
 forced by the engine rather than chosen (``docs/HYDRADB_CONTRACT.md`` §5):
 
 * ``WITH`` is pass-through only, so there are no multi-stage aggregation
-  pipelines — anything that needs a second reduction step lands here.
+  pipelines - anything that needs a second reduction step lands here.
 * There is no ``min``/``max``, so every ranking is Python's job.
 * There is no ``IN``, so "criticality for *these* service ids" cannot be asked
   server-side; one label scan is joined against the exposed set locally.
@@ -55,7 +55,7 @@ def graph_node(node_id: int, properties: Mapping[str, Any]) -> dict[str, Any]:
     The label is recovered from the partitioned integer id space rather than
     from the row, which is what lets a bare ``vertex_id`` coming out of a
     variable-length ``MATCH`` be classified without a second round trip.
-    Properties that a label does not carry arrive as ``None`` and are dropped —
+    Properties that a label does not carry arrive as ``None`` and are dropped -
     the contract says type-specific fields are omitted, not nulled.
     """
     node_id = int(node_id)
@@ -162,7 +162,7 @@ def compute_blast_radius(
     exposed_service_ids: Iterable[int],
     exposed_lockfile_ids: Iterable[int] | None = None,
 ) -> dict[str, Any]:
-    """The contract's ``BlastRadius`` object. Pure — no I/O.
+    """The contract's ``BlastRadius`` object. Pure - no I/O.
 
     ``percentage`` is ``exposed_services / total_services * 100``; tier-1 is
     counted by intersecting the exposed set with the fleet's tier-1 ids.
@@ -202,7 +202,7 @@ def blast_radius(
 #:   reach      0.40  How far a compromise propagates. This is the dominant term
 #:                    because reach is the entire point of a supply-chain attack:
 #:                    a package nobody depends on cannot hurt anybody. Scaled
-#:                    logarithmically — 1000 dependents is worse than 10, but not
+#:                    logarithmically - 1000 dependents is worse than 10, but not
 #:                    100x worse, and the curve saturates at REACH_SATURATION.
 #:   window     0.25  Whether a release actually landed inside the compromise
 #:                    window. This separates "could be attacked" from "was
@@ -217,7 +217,7 @@ def blast_radius(
 #:                    rather than exposure of this package's own dependents.
 #:
 #: The three contextual signals sum to 0.60, so a fully-contextualised package
-#: with almost no reach still clears the "high" band (0.50) — deliberate, since
+#: with almost no reach still clears the "high" band (0.50) - deliberate, since
 #: a freshly-published malicious package has no dependents yet.
 RISK_WEIGHTS: dict[str, float] = {
     "reach": 0.40,
@@ -252,7 +252,7 @@ def composite_risk_score(
     """Blend the four signals into one 0.0-1.0 score plus its breakdown.
 
     The breakdown is returned alongside the score because a bare number is not
-    actionable in an incident review — the UI shows which term dominated.
+    actionable in an incident review - the UI shows which term dominated.
     """
     dependents = max(0, int(transitive_dependents))
     reach = math.log10(1 + dependents) / math.log10(1 + REACH_SATURATION)
@@ -270,7 +270,7 @@ def composite_risk_score(
         maintainer = 0.0
     maintainer = min(1.0, maintainer)
 
-    # Similarity is already 0..1. Extra squatters add a small bounded premium —
+    # Similarity is already 0..1. Extra squatters add a small bounded premium -
     # capped so a swarm of weak impersonations cannot saturate the term on its
     # own and hide how close the nearest one actually is.
     proximity = float(typosquat_similarity or 0.0)
@@ -326,7 +326,7 @@ def package_risk_profile(
     if typosquat_report:
         candidates = typosquat_report.get("candidates") or []
         squat_count = len(candidates)
-        # No `max` server-side and none needed here either — the candidate list
+        # No `max` server-side and none needed here either - the candidate list
         # is already sorted closest-first by the typosquat query.
         for candidate in candidates:
             similarity = max(similarity, float(candidate.get("similarity_score") or 0.0))
@@ -349,7 +349,7 @@ def package_risk_profile(
 def primary_maintainer_id(client: HydraClient, package_id: int) -> tuple[int | None, float]:
     """The first maintainer of a package, plus the query's wire latency.
 
-    Fixed-length and target-anchored, which the engine allows — only
+    Fixed-length and target-anchored, which the engine allows - only
     *variable*-length patterns are required to start from a fixed source.
     """
     result = client.execute(
@@ -373,7 +373,7 @@ def maintainer_risk(
 
     ``Package -[:MAINTAINED_BY]-> Maintainer -[:MAINTAINS]-> Other_Package``.
     The outward hop walks the materialised ``MAINTAINS`` inverse, which projects
-    the sister packages' properties in the same statement — so no follow-up
+    the sister packages' properties in the same statement - so no follow-up
     hydration scan of all 390 Package nodes is needed.
 
     Publication recency lives on ``Version`` nodes, joined to packages by the
@@ -431,7 +431,7 @@ def maintainer_risk(
         if pkg_row.get("id") is not None
     ]
 
-    # The epicentre is not a "sister" — it is the package that was breached.
+    # The epicentre is not a "sister" - it is the package that was breached.
     # simulate-breach names it explicitly; the standalone endpoint infers it
     # from `is_compromised` so both produce the same collateral-only count.
     epicentre: dict[str, Any] | None = None
@@ -594,7 +594,7 @@ def build_timeline(
 
     Every timestamp is graph-derived. The window open time is *inferred*: it is
     the earliest in-window publication across the maintainer's packages, because
-    the credential theft itself leaves no node behind — only its consequences do.
+    the credential theft itself leaves no node behind - only its consequences do.
     """
     package_name = str(package.get("name") or "package")
     events: list[dict[str, Any]] = []
@@ -602,12 +602,12 @@ def build_timeline(
     bad_semver = str((compromised_version or {}).get("semver") or "")
     bad_at = (compromised_version or {}).get("published_at")
 
-    # 1. Last known-good release — the anchor the fix rolls back to.
+    # 1. Last known-good release - the anchor the fix rolls back to.
     if safe_version and safe_version.get("published_at"):
         events.append(
             _event(
                 safe_version["published_at"],
-                f"{package_name}@{safe_version.get('semver')} published — last release "
+                f"{package_name}@{safe_version.get('semver')} published - last release "
                 f"outside the compromise window",
                 "info",
                 "release",
@@ -634,7 +634,7 @@ def build_timeline(
         events.append(
             _event(
                 _iso(window_open - timedelta(minutes=1)),
-                f"Compromise window opens — publish credentials for {handle} used from an "
+                f"Compromise window opens - publish credentials for {handle} used from an "
                 f"unrecognised host ({detail})",
                 "warning",
                 "credential",
@@ -664,7 +664,7 @@ def build_timeline(
         events.append(
             _event(
                 version.get("published_at"),
-                f"{package_name}@{semver} published inside the window — also unsafe to pin",
+                f"{package_name}@{semver} published inside the window - also unsafe to pin",
                 "high",
                 "publish",
             )
@@ -707,7 +707,7 @@ def build_timeline(
 
     events.sort(key=lambda e: (str(e.get("t") or ""), SEVERITY_ORDER.get(e["severity"], 9)))
 
-    # 7. Detection closes the timeline — always last, always now.
+    # 7. Detection closes the timeline - always last, always now.
     if blast:
         exposed = blast.get("exposed_services", 0)
         total = blast.get("total_services", 0)
@@ -721,7 +721,7 @@ def build_timeline(
         if fleet is not None and exposed_service_ids:
             names = fleet.names(exposed_service_ids)
             if names:
-                summary += " — " + ", ".join(names)
+                summary += " - " + ", ".join(names)
         events.append(_event(now_iso(), summary, "critical", "detection"))
 
     return events

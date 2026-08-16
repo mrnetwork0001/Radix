@@ -1,15 +1,15 @@
 """npm registry client: package metadata and weekly download counts.
 
-Network-only module — it produces :class:`PackageMeta` and never touches
+Network-only module - it produces :class:`PackageMeta` and never touches
 HydraDB. Two endpoints:
 
-* ``registry.npmjs.org/{name}`` — the **full** metadata document (the
+* ``registry.npmjs.org/{name}`` - the **full** metadata document (the
   abbreviated "corgi" format lacks the ``time`` map, and per-version publish
   timestamps are the maintainer sentinel's whole feature). Multi-megabyte for
   popular packages, so responses are trimmed immediately and the trimmed form
   is cached to disk with the response ETag; re-runs revalidate with
   ``If-None-Match`` and a 304 serves the cached trim without re-downloading.
-* ``api.npmjs.org/downloads/point/last-week/…`` — weekly downloads. The bulk
+* ``api.npmjs.org/downloads/point/last-week/…`` - weekly downloads. The bulk
   comma-joined form takes up to 128 *unscoped* names per call; scoped names go
   one at a time with ``%2F`` encoding.
 
@@ -127,7 +127,7 @@ class NpmRegistry:
                 "Accept": "application/json",
             }
         )
-        #: How the most recent ``get_meta`` call was satisfied — one of
+        #: How the most recent ``get_meta`` call was satisfied - one of
         #: "network", "revalidated" (ETag 304), "stale-fallback",
         #: "not-found", "error", or None before the first call. Exists so
         #: tests and operators can *prove* the cache worked.
@@ -240,7 +240,7 @@ class NpmRegistry:
 
     def _fill_bulk(self, chunk: list[str], metas: dict[str, PackageMeta]) -> None:
         # A one-name "bulk" request returns the single-package shape, not a
-        # map keyed by name — route it through the single fetch instead.
+        # map keyed by name - route it through the single fetch instead.
         if len(chunk) == 1:
             count = self._fetch_downloads_single(chunk[0])
             if count is not None:
