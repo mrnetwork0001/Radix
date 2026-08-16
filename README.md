@@ -16,6 +16,8 @@
 
 *Hack Hydra 2026 · Track 2A — Supply chain blast radius*
 
+**[Live console →  www.useradix.xyz](https://www.useradix.xyz)**  ·  [API](https://api.useradix.xyz/api/health)
+
 </div>
 
 ---
@@ -57,7 +59,7 @@ Everything below is from verified runs, reproducible with the commands shown.
 |---|---|
 | Graph | **502 nodes**, 3,877 edges (1,975 API-visible; inverse edges are internal) |
 | Seed time | **0.31 s** on the wire, 35 statements, idempotent |
-| Reverse closure, depth 6 | **~6 ms warm** (4.8–7.0 ms over 6 runs; ~25 ms cold) |
+| Reverse closure + version-exact refinement, depth 6 | **~17 ms warm** on the live deployment (15.2-21.4 ms over 6 runs) |
 | Blast radius | **7 / 20 services — 35%**, 3 tier-1, 4 / 10 lockfiles, 24 packages |
 | Infection paths | **82**, longest 7 hops; depth 8 finds 9 services — the horizon is real |
 | Version-exact pruning | 2 direct dependents excluded (`~4.27.0` cannot resolve `4.28.0`) |
