@@ -47,6 +47,10 @@ SEEDER       := $(RADIX_ROOT)/scripts/seed_ecosystem.py
 HYDRA_TOKEN ?= $(HYDRA_AUTH_TOKEN)
 export HYDRA_HTTP_URL HYDRA_ADMIN_URL HYDRA_AUTH_TOKEN HYDRA_TOKEN
 export HYDRA_NAMESPACE HYDRA_GRAPH_ID HYDRA_CELL_ID
+# Optional; enables the auto-PR push path. Empty is fine - open-pr then runs
+# in dry-run mode only.
+GITHUB_TOKEN ?=
+export GITHUB_TOKEN
 export BACKEND_HOST BACKEND_PORT FRONTEND_PORT
 
 # Namespace that holds real ingested data (the demo world stays in 'radix').
