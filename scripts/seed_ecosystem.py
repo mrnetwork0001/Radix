@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 import urllib.error
@@ -65,10 +66,26 @@ from app.schema import (  # noqa: E402  (path bootstrapped by ecosystem_spec)
     VERSION,
 )
 
-DEFAULT_URL = "http://127.0.0.1:8443/v1/graphs/default/query"
-DEFAULT_TOKEN = "local-development-token-32-bytes"
-DEFAULT_NAMESPACE = "radix"
-DEFAULT_CELL = "cell-0"
+def _default_url() -> str:
+    """Query URL from the environment, else the local dev node.
+
+    ``HYDRA_HTTP_URL`` is a base ("http://hydra:8443"), matching what the
+    backend and the compose file already set, so a deployed stack seeds with
+    no extra flags; the path is appended the same way HydraClient builds it.
+    """
+    base = os.getenv("HYDRA_HTTP_URL")
+    if base:
+        graph = os.getenv("HYDRA_GRAPH", "default")
+        return f"{base.rstrip('/')}/v1/graphs/{graph}/query"
+    return "http://127.0.0.1:8443/v1/graphs/default/query"
+
+
+# Env first, dev defaults second: the seeder runs both from a laptop and
+# inside the deployed backend image, where every one of these differs.
+DEFAULT_URL = _default_url()
+DEFAULT_TOKEN = os.getenv("HYDRA_TOKEN", "local-development-token-32-bytes")
+DEFAULT_NAMESPACE = os.getenv("HYDRA_NAMESPACE", "radix")
+DEFAULT_CELL = os.getenv("HYDRA_CELL", "cell-0")
 DEFAULT_CHUNK = 200
 #: Admission control rejects any request declaring more than this
 #: ("client_query_runtime_ms rejected by admission control ... limit 30000").
