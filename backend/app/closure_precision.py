@@ -326,20 +326,30 @@ def refine(client: Any, closure: dict, bad_version: str | None) -> dict:
     # does not resurrect one whose hop-1 transmission was gated away.
     clean_lockfiles = pin_clean - pin_windowed
 
-    # -- 4. reachability, recomputed client-side -----------------------------
-    result = client.execute(
-        f"MATCH (a)-[r:{schema.DEPENDED_ON_BY}]->(b) RETURN a.id AS source, b.id AS target"
-    )
-    latency += _latency_of(result)
+    # -- 4. reachability, recomputed from the routes already in hand ---------
+    # The closure carries root-first SSpaths chains, which describe exactly the
+    # reachable subgraph this BFS explores. Deriving adjacency from them costs
+    # nothing, where scanning every DEPENDED_ON_BY edge to rebuild the same
+    # subgraph was ~80% of this function's time and grew with the whole graph
+    # rather than with the incident.
     adjacency: dict[int, list[int]] = {}
-    for row in result.rows:
-        if row.get("source") is None or row.get("target") is None:
-            continue
-        adjacency.setdefault(int(row["source"]), []).append(int(row["target"]))
+    evidenced: set[int] = set()
+    for chain in closure.get("paths") or ():
+        ids = [int(node) for node in chain]
+        evidenced.update(ids)
+        for source, target in zip(ids, ids[1:]):
+            bucket = adjacency.setdefault(source, [])
+            if target not in bucket:
+                bucket.append(target)
 
     hop1_pruned = set(excluded_hop1)
     reachable = _bfs(adjacency, root_id, depth, hop1_pruned, clean_lockfiles)
-    final_set = (reachable & original_set) - clean_lockfiles
+
+    # Fail open. `pathCount` can truncate the chain set, so a node the paths
+    # never mention has no evidence either way and keeps its exposure; only a
+    # gated hop-1 dependent is pruned without needing a route to prove it.
+    unevidenced = original_set - evidenced - hop1_pruned
+    final_set = ((reachable | unevidenced) & original_set) - clean_lockfiles
 
     # -- 5. prune the affected lists in place, keeping their order -----------
     pruned_by_key: dict[str, list[int]] = {}
