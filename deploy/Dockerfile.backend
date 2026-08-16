@@ -1,0 +1,41 @@
+# Radix backend + sentinel image.
+#
+# Build context is the REPO ROOT (compose runs with `--project-directory .`):
+#   docker build -f deploy/Dockerfile.backend .
+#
+# One image serves two compose services: `backend` runs uvicorn (the default
+# CMD), `sentinel` overrides it with `python -m sentinel.watcher`.
+
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# git: `scripts/ingest.py` shallow-clones git URLs when ingesting real repos.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY backend/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# `app` (FastAPI + ingest) and `sentinel` sit side by side under /app, so
+# `uvicorn app.main:app` and `python -m sentinel.watcher` both resolve from the
+# workdir. `scripts` rides along for seeding/ingesting via `docker compose run`.
+# Never copy backend/.venv or caches — only the packages themselves.
+COPY backend/app ./app
+COPY sentinel ./sentinel
+COPY scripts ./scripts
+COPY data ./data
+
+# Registry/OSV disk caches land under /app/data (compose mounts a named volume
+# there; its first use seeds the volume with the committed data/ files above).
+RUN useradd --uid 10001 --create-home --shell /usr/sbin/nologin radix \
+    && chown -R radix:radix /app/data
+USER radix
+
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,0 +1,164 @@
+# Radix — production stack for a single VPS: HydraDB + backend + sentinel +
+# nginx-served frontend. Only port 80 (and optionally 443) faces the world;
+# HydraDB is reachable solely on the compose-internal network.
+#
+# Always run from the REPO ROOT with an explicit project directory, so the
+# build contexts and the token-file mount resolve against the checkout:
+#
+#   docker compose --env-file deploy/.env.prod \
+#     -f deploy/docker-compose.prod.yml --project-directory . up -d --build
+#
+# The hydra service definition is transcribed from the verified dev compose
+# file (docker-compose.yml) — see docs/HYDRADB_CONTRACT.md §1 for why the
+# odd-looking lines (user 0:0, RUST_MIN_STACK, per-path volumes) are required.
+
+name: radix-prod
+
+services:
+  hydra:
+    image: ${HYDRA_IMAGE:-ghcr.io/hydra-db/hydradb:latest}
+    restart: unless-stopped
+
+    # The image declares USER 10001:10001, but named volumes are created
+    # root-owned; as 10001 the node boots, serves /readyz, then silently fails
+    # every heartbeat write. Root is required, not a shortcut.
+    user: "0:0"
+
+    # No `ports:` — internal network only. Uncomment the loopback mappings
+    # below ONLY if you run the sentinel bare via systemd on the same host
+    # (deploy/radix-sentinel.service) and need HydraDB on 127.0.0.1.
+    # ports:
+    #   - "127.0.0.1:8443:8443"   # HTTP JSON query API
+    #   - "127.0.0.1:9090:9090"   # admin: /readyz, /metrics
+
+    volumes:
+      # Mounted AT the data paths, never at a shared parent: LOCAL_PATH must
+      # already exist at boot or the node aborts with UnableToCanonicalize.
+      - store:/var/lib/hydra/store
+      - cache:/var/lib/hydra/cache
+      # HydraDB reads the auth token from a FILE (no env-var form, ≥32 bytes).
+      - ${HYDRA_TOKEN_FILE:-./hydra/auth-token}:/etc/hydra/auth-token:ro
+
+    environment:
+      # Local-filesystem object store: no S3/MinIO sidecar needed.
+      CLOUD_PROVIDER: "local"
+      LOCAL_PATH: "/var/lib/hydra/store"
+
+      GRAPH_NAMESPACE: "${HYDRA_NAMESPACE:-radix-live}"
+      GRAPH_ID: "default"
+      GRAPH_CELL_ID: "cell-0"
+      GRAPH_CELLS: "cell-0"
+      GRAPH_DATA_PATH: "data"
+
+      # Plaintext stays inside the compose network; TLS terminates at the edge
+      # (nginx/Caddy). Nothing here is host-reachable.
+      GRAPH_ALLOW_PLAINTEXT: "true"
+      GRAPH_AUTH_TOKEN_FILE: "/etc/hydra/auth-token"
+
+      GRAPH_DATA_CACHE_BYTES: "134217728"   # 128 MiB
+      GRAPH_DATA_CACHE_DIR: "/var/lib/hydra/cache"
+
+      GRAPH_NODE_ID: "node-0"
+      GRAPH_BOLT_NODE_ADDRESSES: "node-0=0.0.0.0:7687"
+      GRAPH_BOLT_ADDR: "0.0.0.0:7687"
+      GRAPH_HTTP_ADDR: "0.0.0.0:8443"
+      GRAPH_ADMIN_ADDR: "0.0.0.0:9090"
+      # Bolt clients are in-network in prod, so advertise the service name.
+      GRAPH_ADVERTISED_BOLT_ADDR: "hydra:7687"
+
+      # 32 MiB thread stacks: without this the node accepts connections and
+      # dies with a stack overflow on the very first query.
+      RUST_MIN_STACK: "33554432"
+      RUST_LOG: "${RUST_LOG:-warn}"
+
+    healthcheck:
+      # The image ships neither curl nor wget; probe /readyz via bash /dev/tcp.
+      test:
+        - CMD
+        - bash
+        - -c
+        - 'exec 3<>/dev/tcp/127.0.0.1/9090 && printf "GET /readyz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 && head -n 1 <&3 | grep -q " 200 "'
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+    # The node flushes its object store on SIGTERM; do not rush it.
+    stop_grace_period: 30s
+
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.backend
+    image: radix-backend
+    restart: unless-stopped
+    depends_on:
+      hydra:
+        condition: service_healthy
+    environment:
+      HYDRA_HTTP_URL: "http://hydra:8443"
+      HYDRA_ADMIN_URL: "http://hydra:9090"
+      HYDRA_TOKEN: "${HYDRA_TOKEN:?set HYDRA_TOKEN in deploy/.env.prod — must match the auth-token file byte for byte}"
+      HYDRA_NAMESPACE: "${HYDRA_NAMESPACE:-radix-live}"
+    volumes:
+      # Registry/OSV disk caches (and the committed data/ snapshot on first
+      # use) persist across image rebuilds. Shared with the sentinel so both
+      # benefit from one cache.
+      - ingest_cache:/app/data
+    # In-network only; nginx proxies /api here. No host port.
+    expose:
+      - "8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  sentinel:
+    # Same image as the backend; compose builds it once for `backend` and this
+    # service just overrides the command.
+    image: radix-backend
+    command: ["python", "-m", "sentinel.watcher"]
+    restart: unless-stopped
+    depends_on:
+      hydra:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    environment:
+      HYDRA_HTTP_URL: "http://hydra:8443"
+      HYDRA_TOKEN: "${HYDRA_TOKEN:?set HYDRA_TOKEN in deploy/.env.prod — must match the auth-token file byte for byte}"
+      HYDRA_NAMESPACE: "${HYDRA_NAMESPACE:-radix-live}"
+      SENTINEL_INTERVAL: "${SENTINEL_INTERVAL:-900}"
+      SENTINEL_REPOS: "${SENTINEL_REPOS:-}"
+    volumes:
+      - ingest_cache:/app/data
+
+  frontend:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.frontend
+    image: radix-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      # - "443:443"   # after adding TLS certs to nginx — or leave 80-only and
+      #                 put Caddy in front for automatic TLS (deploy/README.md)
+
+volumes:
+  # Explicit names, distinct from the dev volumes (radix_store/radix_cache), so
+  # a prod stack accidentally started on a dev machine can never attach to —
+  # or corrupt — the seeded demo graph.
+  store:
+    name: radix_live_store
+  cache:
+    name: radix_live_cache
+  ingest_cache:
+    name: radix_live_ingest_cache

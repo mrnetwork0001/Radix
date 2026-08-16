@@ -1,0 +1,53 @@
+# Radix sentinel — bare-metal alternative to the compose `sentinel` service.
+# Use ONE of the two, not both.
+#
+# Assumes the repo at /opt/radix with the backend venv populated:
+#   python3.12 -m venv /opt/radix/backend/.venv
+#   /opt/radix/backend/.venv/bin/pip install -r /opt/radix/backend/requirements.txt
+# and HydraDB reachable at the HYDRA_HTTP_URL in deploy/.env.prod — if HydraDB
+# runs in compose, uncomment the loopback `ports:` block on its service first.
+#
+# Install:
+#   sudo useradd --system --shell /usr/sbin/nologin radix || true
+#   sudo chown -R radix /opt/radix/data
+#   sudo cp /opt/radix/deploy/radix-sentinel.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now radix-sentinel
+# Logs: journalctl -u radix-sentinel -f
+
+[Unit]
+Description=Radix supply-chain sentinel (OSV advisory watcher)
+Documentation=file:/opt/radix/docs/INGEST_CONTRACT.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=radix
+WorkingDirectory=/opt/radix
+# Plain KEY=VALUE file shared with docker compose; supplies HYDRA_HTTP_URL,
+# HYDRA_TOKEN, HYDRA_NAMESPACE, SENTINEL_INTERVAL, SENTINEL_REPOS.
+EnvironmentFile=/opt/radix/deploy/.env.prod
+ExecStart=/opt/radix/backend/.venv/bin/python -m sentinel.watcher
+
+# The watcher exits promptly and cleanly on SIGTERM, even mid-sleep.
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+Restart=always
+RestartSec=15
+
+# Hardening: read-only /usr /boot /etc, private /tmp, no privilege escalation.
+# /opt stays writable so the watcher can keep its OSV cache in /opt/radix/data.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+# Timestamped single-line stdout records — journald needs no extra formatting.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=radix-sentinel
+
+[Install]
+WantedBy=multi-user.target
