@@ -2,12 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
-      "comment": "API proxied to the VPS stack. A rewrite (not a redirect) keeps it same-origin, so the browser never sees a cross-origin call and CORS never enters the picture.",
       "source": "/api/:path*",
       "destination": "https://api.useradix.xyz/api/:path*"
     },
     {
-      "comment": "SPA fallback for everything else. Excludes assets/ so a missing bundle 404s honestly instead of returning HTML.",
       "source": "/((?!api/|assets/).*)",
       "destination": "/index.html"
     }
