@@ -9,6 +9,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { cx, useEscapeKey } from './components/ui';
+
 import { BlastRadiusGauge } from './components/BlastRadiusGauge';
 import { ControlDock } from './components/ControlDock';
 import { GraphCanvas } from './components/GraphCanvas';
@@ -39,11 +41,15 @@ export default function App() {
   const [patchOpen, setPatchOpen] = useState(false);
   const [patchLoading, setPatchLoading] = useState(false);
   const [prLoading, setPrLoading] = useState(false);
+  // Mobile mission-controls drawer; irrelevant at lg+ where the rail is fixed.
+  const [controlsOpen, setControlsOpen] = useState(false);
   const [prResult, setPrResult] = useState<OpenPrResponse | null>(null);
   const [standaloneSquats, setStandaloneSquats] = useState<TyposquatCandidate[] | null>(null);
 
   const graph = useGraphData();
   const breach = useBreachSimulation();
+
+  useEscapeKey(controlsOpen, () => setControlsOpen(false));
 
   // --- Health -------------------------------------------------------------
   // Polled rather than fetched once, so pulling HydraDB out from under a live
@@ -129,6 +135,7 @@ export default function App() {
 
   const handleSimulate = useCallback(() => {
     setStandaloneSquats(null);
+    setControlsOpen(false);
     void breach.simulate({
       ...(breachTarget
         ? { package_id: breachTarget.id }
@@ -249,6 +256,8 @@ export default function App() {
         alertCount={alertCount}
         health={health}
         incidentActive={breach.isSimulating || breach.result !== null}
+        menuOpen={controlsOpen}
+        onToggleMenu={() => setControlsOpen((open) => !open)}
       />
 
       <main className="relative flex-1 overflow-hidden">
@@ -265,12 +274,30 @@ export default function App() {
         {/* Controls float over the canvas so the graph keeps the full viewport.
             Incident console first: it is the console's primary action, and the
             gauge below it only earns attention once an incident exists. */}
-        {/* overflow-y-auto: the container is pointer-events-none, but wheel
-            events over the (pointer-events-auto) panels bubble here, so the
-            rail scrolls when it outgrows the viewport instead of clipping -
-            while empty rail space still passes zoom/drag through to the
-            canvas. */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 flex w-[22rem] max-w-[85vw] flex-col justify-start gap-4 overflow-y-auto p-6">
+        {/* Backdrop for the mobile drawer only. */}
+        {controlsOpen ? (
+          <button
+            type="button"
+            aria-label="Close mission controls"
+            onClick={() => setControlsOpen(false)}
+            className="absolute inset-0 z-30 bg-deep/60 backdrop-blur-sm lg:hidden"
+          />
+        ) : null}
+
+        {/* One DOM tree, two presentations. At lg+ this is the floating rail
+            (pointer-events-none shell, panels opt back in, wheel over a panel
+            scrolls the rail). Below lg it is a slide-in drawer driven by the
+            header hamburger - same children, so ADD REPO's running job state
+            survives a breakpoint change mid-poll. */}
+        <div
+          className={cx(
+            'absolute inset-y-0 left-0 z-40 flex w-[min(22rem,88vw)] flex-col justify-start gap-4 overflow-y-auto p-4',
+            'bg-deep/95 shadow-2xl backdrop-blur-md transition-transform duration-300 ease-swift',
+            'pb-[max(1rem,env(safe-area-inset-bottom))]',
+            controlsOpen ? 'translate-x-0' : '-translate-x-full',
+            'lg:pointer-events-none lg:z-auto lg:w-[22rem] lg:translate-x-0 lg:bg-transparent lg:p-6 lg:shadow-none lg:backdrop-blur-0',
+          )}
+        >
           <div className="pointer-events-auto">
             <ControlDock
               onSimulate={handleSimulate}

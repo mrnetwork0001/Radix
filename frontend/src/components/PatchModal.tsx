@@ -287,7 +287,7 @@ export function PatchModal({ patch, open, onClose, onOpenPr, prLoading, prResult
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 max-sm:pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6"
       role="presentation"
     >
       {/* Backdrop. */}
@@ -348,7 +348,11 @@ export function PatchModal({ patch, open, onClose, onOpenPr, prLoading, prResult
             </p>
           </div>
 
-          <IconButton aria-label="Close patch dialog" onClick={onClose}>
+          <IconButton
+            aria-label="Close patch dialog"
+            onClick={onClose}
+            className="max-sm:h-10 max-sm:w-10"
+          >
             <GlyphClose />
           </IconButton>
         </header>
@@ -364,6 +368,7 @@ export function PatchModal({ patch, open, onClose, onOpenPr, prLoading, prResult
                 aria-pressed={i === index}
                 className={cx(
                   'shrink-0 rounded-lg border px-3 py-1.5 text-2xs font-medium transition-all duration-200 ease-swift',
+                  'max-sm:min-h-[44px]',
                   i === index
                     ? 'border-toxic/50 bg-toxic/10 text-toxic'
                     : 'border-white/10 bg-white/[0.03] text-ink-muted hover:border-white/25 hover:text-ink',
@@ -388,11 +393,13 @@ export function PatchModal({ patch, open, onClose, onOpenPr, prLoading, prResult
                 </span>
                 <span className="text-xs text-ink">
                   <span className="label-micro mr-2">Lockfile</span>
-                  <span className="font-mono text-amber">{current.lockfile}</span>
+                  {/* break-all only bites when the value would overflow, i.e. on
+                      narrow phones - wide viewports render identically. */}
+                  <span className="break-all font-mono text-amber">{current.lockfile}</span>
                 </span>
                 <span className="text-xs text-ink">
                   <span className="label-micro mr-2">Commit</span>
-                  <span className="stat-numeral font-mono text-ink-muted">
+                  <span className="stat-numeral break-all font-mono text-ink-muted">
                     {current.commit_hash}
                   </span>
                 </span>
@@ -406,6 +413,7 @@ export function PatchModal({ patch, open, onClose, onOpenPr, prLoading, prResult
                   <CopyButton
                     text={prResult ? prResult.diff : current.diff}
                     label="the unified diff"
+                    className="max-sm:min-h-[44px]"
                   />
                 </div>
                 {/* The engine's diff is a real commit; it replaces the rendered preview. */}
@@ -418,6 +426,7 @@ export function PatchModal({ patch, open, onClose, onOpenPr, prLoading, prResult
                   <CopyButton
                     text={JSON.stringify({ overrides: current.overrides }, null, 2)}
                     label="the npm overrides block"
+                    className="max-sm:min-h-[44px]"
                   />
                 </div>
                 <OverridesView overrides={current.overrides} />
@@ -435,12 +444,19 @@ export function PatchModal({ patch, open, onClose, onOpenPr, prLoading, prResult
         </div>
 
         {/* --- Footer ---------------------------------------------------- */}
-        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-5 py-3">
+        {/* Below sm the actions stack full-width at a 44px touch height; the
+            max-sm:* classes are inert from sm up, so wider viewports keep the
+            previous single-row footer exactly. */}
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-5 py-3 max-sm:flex-col max-sm:items-stretch">
           <span className="text-2xs text-ink-faint">
             Generated from the reverse-closure result - no file is written by Radix.
           </span>
-          <div className="flex items-center gap-2">
-            <CopyButton text={patch.pr_body} label="the PR body" />
+          <div className="flex items-center gap-2 max-sm:flex-col max-sm:items-stretch">
+            <CopyButton
+              text={patch.pr_body}
+              label="the PR body"
+              className="justify-center max-sm:min-h-[44px]"
+            />
             {onOpenPr ? (
               <button
                 type="button"
@@ -452,6 +468,7 @@ export function PatchModal({ patch, open, onClose, onOpenPr, prLoading, prResult
                   'transition-all duration-200 ease-swift active:scale-95',
                   'border-toxic/50 bg-toxic/10 text-toxic',
                   'hover:border-toxic/70 hover:bg-toxic/15',
+                  'justify-center max-sm:min-h-[44px]',
                   prLoading === true && 'cursor-wait opacity-60',
                 )}
               >
@@ -468,6 +485,7 @@ export function PatchModal({ patch, open, onClose, onOpenPr, prLoading, prResult
                 'rounded-lg border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-2xs',
                 'font-medium text-ink-muted transition-all duration-200 ease-swift',
                 'hover:border-white/25 hover:bg-white/[0.08] hover:text-ink active:scale-95',
+                'max-sm:flex max-sm:min-h-[44px] max-sm:items-center max-sm:justify-center',
               )}
             >
               CLOSE

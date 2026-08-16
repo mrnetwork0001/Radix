@@ -141,7 +141,13 @@ export function NodeInspector({
 
   return (
     <aside
-      className={cx('pointer-events-none fixed inset-y-0 right-0 z-40 flex w-full max-w-[27rem] p-3', className)}
+      // Below sm the panel is a full-width, edge-to-edge sheet; from sm up the
+      // max-sm:* classes are inert and this is exactly the previous rendering.
+      className={cx(
+        'pointer-events-none fixed inset-y-0 right-0 z-40 flex w-full max-w-[27rem] p-3',
+        'max-sm:inset-x-0 max-sm:max-w-none max-sm:p-0',
+        className,
+      )}
       aria-label="Node inspector"
     >
       <GlassCard
@@ -153,6 +159,9 @@ export function NodeInspector({
         className={cx(
           'pointer-events-auto flex h-full w-full flex-col overflow-hidden outline-none',
           'transition-[transform,opacity] duration-300 ease-swift',
+          // Full-bleed sheet: square corners and safe-area padding so the
+          // header and footer clear the notch and the home indicator.
+          'max-sm:rounded-none max-sm:pt-[env(safe-area-inset-top)] max-sm:pb-[env(safe-area-inset-bottom)]',
         )}
         style={{
           transform: entered ? 'translate3d(0,0,0)' : 'translate3d(28px,0,0)',
@@ -204,7 +213,11 @@ export function NodeInspector({
             </p>
           </div>
 
-          <IconButton aria-label="Close inspector" onClick={onClose}>
+          <IconButton
+            aria-label="Close inspector"
+            onClick={onClose}
+            className="max-sm:h-10 max-sm:w-10"
+          >
             <GlyphClose />
           </IconButton>
         </header>
@@ -384,7 +397,7 @@ export function NodeInspector({
               className={cx(
                 'group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl',
                 'border border-toxic/45 bg-gradient-to-br from-toxic/20 via-toxic/10 to-transparent',
-                'px-4 py-2.5 text-xs font-semibold tracking-wide text-toxic',
+                'px-4 py-2.5 text-xs font-semibold tracking-wide text-toxic max-sm:min-h-[44px]',
                 'shadow-glow-green transition-all duration-200 ease-swift',
                 'hover:-translate-y-px hover:border-toxic/75 hover:from-toxic/30',
                 'active:translate-y-0 active:scale-[0.99]',

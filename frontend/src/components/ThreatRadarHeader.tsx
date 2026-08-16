@@ -1,6 +1,12 @@
 /**
  * Command bar: RADIX wordmark + radar motif on the left, link health beside it,
- * four headline metric tiles on the right. One row, ~64-72px tall.
+ * four headline metric tiles on the right. One row at lg+, ~64-72px tall.
+ *
+ * Below lg the bar restacks into two slim rows: identity + link health with an
+ * optional hamburger at the right edge, then the four tiles as a horizontal
+ * snap-scroll strip (one finger-swipe tall, never wrapping). Every mobile
+ * difference lives behind responsive variants; at lg+ the classes resolve to
+ * exactly the original single-row layout.
  *
  * Discipline rules this component enforces:
  * - The bar itself is neutral glass at all times. The red treatment (border
@@ -37,6 +43,18 @@ export interface ThreatRadarHeaderProps {
    * restrained red hairline to the ALERTS tile - never anything page-wide.
    */
   incidentActive?: boolean;
+  /**
+   * Optional: whether the mobile mission-controls drawer is open. Only read
+   * when `onToggleMenu` is provided; drives the hamburger's X morph and its
+   * `aria-expanded`.
+   */
+  menuOpen?: boolean;
+  /**
+   * Optional: when provided, a hamburger button renders at the right edge of
+   * the identity row - below lg only. The orchestrator owns the drawer; this
+   * component only reports the toggle.
+   */
+  onToggleMenu?: () => void;
   className?: string;
 }
 
@@ -132,6 +150,49 @@ function RadarSweep({ size }: { size: number }) {
 }
 
 // ---------------------------------------------------------------------------
+// Mobile menu toggle
+// ---------------------------------------------------------------------------
+
+/**
+ * Shared geometry for the three hamburger bars: 16px wide, 2px tall, vertically
+ * centred in a 16px box. The rest state fans them out +/-5px; the open state
+ * collapses the outer pair onto the centre and rotates them into an X while the
+ * middle bar fades. Transform + opacity only, so the morph runs on the
+ * compositor and honours the global reduced-motion collapse.
+ */
+const MENU_BAR =
+  'absolute left-0 top-[7px] block h-[2px] w-4 rounded-full bg-current ' +
+  'transition-[transform,opacity] duration-200 ease-swift';
+
+/**
+ * 40x40 glass square, visible only below lg. The orchestrator wires
+ * `onToggleMenu`/`menuOpen`; without the callback the button never mounts, so
+ * the desktop DOM is untouched even before the orchestrator catches up.
+ */
+function MenuToggle({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label="Toggle mission controls"
+      aria-expanded={open}
+      className={cx(
+        'ml-auto inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg lg:hidden',
+        'border border-white/10 bg-white/[0.03] text-ink-muted',
+        'transition-colors duration-200 ease-swift',
+        'hover:border-white/20 hover:bg-white/[0.08] hover:text-ink active:scale-95',
+      )}
+    >
+      <span className="relative block h-4 w-4" aria-hidden="true">
+        <span className={cx(MENU_BAR, open ? 'rotate-45' : '-translate-y-[5px]')} />
+        <span className={cx(MENU_BAR, open ? 'opacity-0' : 'opacity-100')} />
+        <span className={cx(MENU_BAR, open ? '-rotate-45' : 'translate-y-[5px]')} />
+      </span>
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Metric tile
 // ---------------------------------------------------------------------------
 
@@ -217,6 +278,8 @@ export function ThreatRadarHeader({
   alertCount = 0,
   health,
   incidentActive = false,
+  menuOpen = false,
+  onToggleMenu,
   className,
 }: ThreatRadarHeaderProps) {
   const s = stats ?? EMPTY_STATS;
@@ -244,13 +307,16 @@ export function ThreatRadarHeader({
       glow
       raised
       className={cx(
-        'flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-1.5',
+        // Mobile: two stacked slim rows. lg+: the original single row, with
+        // every base class overridden back to its historical value.
+        'flex flex-col gap-y-2 px-3 py-2',
+        'lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-x-6 lg:gap-y-3 lg:px-4 lg:py-1.5',
         className,
       )}
       aria-label="Radix threat radar"
     >
       {/* --- Identity + link health -------------------------------------- */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 lg:gap-4">
         {/* The wordmark is the way back to the landing page - SPA-routed so
             the console's state dies with the unmount, exactly like a reload. */}
         <a
@@ -288,27 +354,39 @@ export function ThreatRadarHeader({
             </span>
           ) : null}
         </div>
+
+        {onToggleMenu ? <MenuToggle open={menuOpen} onToggle={onToggleMenu} /> : null}
       </div>
 
-      {/* --- Live metrics ------------------------------------------------ */}
-      <div className="flex flex-wrap items-stretch gap-2">
+      {/* --- Live metrics ------------------------------------------------
+          Mobile: a horizontal snap-scroll strip, one finger-swipe tall. The
+          negative margin lets tiles scroll edge-to-edge under the card's
+          padding, and scroll-px keeps snap stops aligned with that padding.
+          lg+: the original inline wrapping row. */}
+      <div
+        className={cx(
+          '-mx-3 flex snap-x snap-mandatory items-stretch gap-2 overflow-x-auto',
+          'scroll-px-3 whitespace-nowrap px-3 scrollbar-none',
+          'lg:mx-0 lg:flex-wrap lg:snap-none lg:overflow-x-visible lg:scroll-px-0 lg:whitespace-normal lg:px-0',
+        )}
+      >
         <MetricTile
           label="NODES"
           value={s.total_nodes}
           accent="cyan"
           caption={`${formatNumber(s.total_edges)} edges`}
-          className="min-w-[6.5rem]"
+          className="min-w-[6.5rem] shrink-0 snap-start"
         />
         <MetricTile
           label="LOCKFILES"
           value={s.tracked_lockfiles}
           accent="amber"
           caption={`${formatNumber(s.services)} services`}
-          className="min-w-[6.5rem]"
+          className="min-w-[6.5rem] shrink-0 snap-start"
         />
 
         {/* Announced on change: this tile is the whole point of the header. */}
-        <div role="status" aria-live="polite" className="flex items-stretch">
+        <div role="status" aria-live="polite" className="flex shrink-0 snap-start items-stretch">
           <MetricTile
             label="ALERTS"
             value={alertCount}
@@ -337,7 +415,7 @@ export function ThreatRadarHeader({
           decimals={1}
           accent="cyan"
           caption={closureMs === null ? 'awaiting incident' : 'ms · HydraDB'}
-          className="min-w-[8rem]"
+          className="min-w-[8rem] shrink-0 snap-start"
         />
       </div>
     </GlassCard>

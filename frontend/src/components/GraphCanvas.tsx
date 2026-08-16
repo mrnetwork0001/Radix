@@ -971,7 +971,9 @@ function CanvasLegend({ showInfectionPath }: { showInfectionPath: boolean }) {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute right-3 top-3 z-10 flex select-none flex-col items-end gap-1"
+      // Hidden below md: on phones the pills collided with the floating
+      // console panels. From md up this is exactly the previous rendering.
+      className="pointer-events-none absolute right-3 top-3 z-10 hidden select-none flex-col items-end gap-1 md:flex"
     >
       {LEGEND_ROWS.map((row) => (
         <div key={row.label} className={CHROME_PILL}>
@@ -1019,15 +1021,23 @@ function CanvasLegend({ showInfectionPath }: { showInfectionPath: boolean }) {
   );
 }
 
-/** Interaction hint, bottom-right. One line; the pill sizes to its content. */
+/**
+ * Interaction hint, bottom-right. One line; the pill sizes to its content.
+ *
+ * Hidden below sm (it overlapped the panels on phones). One element with two
+ * responsive spans: touch wording from sm to lg, pointer wording at lg and up.
+ */
 function CanvasHint() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute bottom-3 right-3 z-10 select-none"
+      className="pointer-events-none absolute bottom-3 right-3 z-10 hidden select-none sm:block"
     >
       <div className={CHROME_PILL}>
-        <span className="text-2xs text-ink-faint">
+        <span className="text-2xs text-ink-faint lg:hidden">
+          pinch to zoom · drag to pan · tap a node
+        </span>
+        <span className="hidden text-2xs text-ink-faint lg:inline">
           scroll to zoom · drag to pan · click a node to inspect
         </span>
       </div>

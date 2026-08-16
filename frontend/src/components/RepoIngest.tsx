@@ -192,7 +192,7 @@ export function RepoIngest({ onIngested, className }: RepoIngestProps) {
       {/* --- Modal --------------------------------------------------------- */}
       {open ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 max-sm:pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6"
           role="presentation"
         >
           <div
@@ -255,14 +255,24 @@ export function RepoIngest({ onIngested, className }: RepoIngestProps) {
                   HydraDB.
                 </p>
               </div>
-              <IconButton aria-label="Close ingestion dialog" onClick={() => setOpen(false)}>
+              <IconButton
+                aria-label="Close ingestion dialog"
+                onClick={() => setOpen(false)}
+                className="max-sm:h-10 max-sm:w-10"
+              >
                 <GlyphClose />
               </IconButton>
             </header>
 
             {/* Body */}
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
-              <form onSubmit={onSubmit} className="flex items-center gap-2">
+              {/* Below sm the input and submit stack full-width at a 44px touch
+                  height; from sm up the max-sm:* classes are inert and the row
+                  renders exactly as before. */}
+              <form
+                onSubmit={onSubmit}
+                className="flex items-center gap-2 max-sm:flex-col max-sm:items-stretch"
+              >
                 <label htmlFor={inputId} className="sr-only">
                   Repository git URL or local path
                 </label>
@@ -279,7 +289,7 @@ export function RepoIngest({ onIngested, className }: RepoIngestProps) {
                     'min-w-0 flex-1 rounded-lg border border-white/10 bg-black/40 px-3 py-2',
                     'font-mono text-xs text-ink placeholder:text-ink-faint',
                     'transition-colors duration-200 focus:border-cyan/50 focus:outline-none',
-                    'disabled:opacity-50',
+                    'disabled:opacity-50 max-sm:min-h-[44px]',
                   )}
                 />
                 <button
@@ -290,6 +300,7 @@ export function RepoIngest({ onIngested, className }: RepoIngestProps) {
                     'text-2xs font-semibold tracking-wide text-cyan',
                     'transition-all duration-200 ease-swift hover:border-cyan/70 hover:bg-cyan/20',
                     'active:scale-95 disabled:pointer-events-none disabled:opacity-40',
+                    'max-sm:flex max-sm:min-h-[44px] max-sm:items-center max-sm:justify-center',
                   )}
                 >
                   {busy ? <Spinner size={12} label="Starting ingestion" /> : 'INGEST'}
@@ -349,6 +360,7 @@ export function RepoIngest({ onIngested, className }: RepoIngestProps) {
                       'text-2xs font-semibold tracking-wide text-alert',
                       'transition-all duration-200 ease-swift hover:border-alert/70 hover:bg-alert/20',
                       'active:scale-95 disabled:pointer-events-none disabled:opacity-40',
+                      'max-sm:flex max-sm:min-h-[44px] max-sm:w-full max-sm:items-center max-sm:justify-center',
                     )}
                   >
                     RETRY
@@ -358,11 +370,13 @@ export function RepoIngest({ onIngested, className }: RepoIngestProps) {
             </div>
 
             {/* Footer */}
-            <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-5 py-3">
+            {/* Same mobile treatment as the patch modal footer: stacked
+                full-width actions below sm, untouched from sm up. */}
+            <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-5 py-3 max-sm:flex-col max-sm:items-stretch">
               <span className="text-2xs text-ink-faint">
                 One job runs at a time - ingestion is registry and OSV heavy.
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 max-sm:flex-col max-sm:items-stretch">
                 {phase === 'done' || phase === 'error' ? (
                   <button
                     type="button"
@@ -371,6 +385,7 @@ export function RepoIngest({ onIngested, className }: RepoIngestProps) {
                       'rounded-lg border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-2xs',
                       'font-medium text-ink-muted transition-all duration-200 ease-swift',
                       'hover:border-white/25 hover:bg-white/[0.08] hover:text-ink active:scale-95',
+                      'max-sm:flex max-sm:min-h-[44px] max-sm:items-center max-sm:justify-center',
                     )}
                   >
                     NEW JOB
@@ -383,6 +398,7 @@ export function RepoIngest({ onIngested, className }: RepoIngestProps) {
                     'rounded-lg border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-2xs',
                     'font-medium text-ink-muted transition-all duration-200 ease-swift',
                     'hover:border-white/25 hover:bg-white/[0.08] hover:text-ink active:scale-95',
+                    'max-sm:flex max-sm:min-h-[44px] max-sm:items-center max-sm:justify-center',
                   )}
                 >
                   CLOSE
