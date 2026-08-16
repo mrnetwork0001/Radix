@@ -14630,7 +14630,7 @@
    "type": "DEPENDS_ON",
    "source": 1000026,
    "target": 1000004,
-   "constraint": "^4.28.0",
+   "constraint": "~4.27.0",
    "is_dev": false,
    "transitive_depth": 1
   },
@@ -14646,7 +14646,7 @@
    "type": "DEPENDS_ON",
    "source": 1000027,
    "target": 1000004,
-   "constraint": "^4.28.0",
+   "constraint": "~4.27.0",
    "is_dev": false,
    "transitive_depth": 1
   },
