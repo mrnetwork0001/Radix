@@ -49,11 +49,8 @@ function TopNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-white/5 bg-deep/70 backdrop-blur-md">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center px-6">
-        <a href="/" className="flex items-center gap-3" aria-label="Radix home">
+        <a href="/" aria-label="Radix home">
           <Wordmark className="h-5" />
-          <Badge accent="cyan" variant="outline" className="hidden sm:inline-flex">
-            powered by HydraDB
-          </Badge>
         </a>
       </div>
     </header>
