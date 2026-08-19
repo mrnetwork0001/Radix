@@ -9,7 +9,7 @@
 
 import type { ReactNode, SVGProps } from 'react';
 
-import { Badge, GlassCard, cx } from './components/ui';
+import { Badge, Brandmark, GlassCard, cx } from './components/ui';
 
 const GITHUB_URL = 'https://github.com/mrnetwork0001/Radix';
 
@@ -50,7 +50,7 @@ function TopNav() {
     <header className="sticky top-0 z-40 border-b border-white/5 bg-deep/70 backdrop-blur-md">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center px-6">
         <a href="/" aria-label="Radix home">
-          <Wordmark className="h-5" />
+          <Wordmark size={34} />
         </a>
       </div>
     </header>
@@ -522,7 +522,7 @@ function Footer({ onLaunch }: { onLaunch: () => void }) {
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 py-12 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
         {/* Brand block */}
         <div className="sm:col-span-2 lg:col-span-1">
-          <Wordmark className="h-5" />
+          <Wordmark size={34} />
           <p className="mt-5 max-w-sm text-sm leading-relaxed text-ink-muted">
             Graph-native supply-chain sentinel on HydraDB. Reverse dependency
             closure, maintainer co-authorship risk, typosquat proximity and
@@ -596,15 +596,14 @@ function SectionHeading({ kicker, title, sub }: { kicker: string; title: string;
   );
 }
 
-function Wordmark({ className }: { className?: string }) {
-  return (
-    <span className={cx('flex items-center gap-2', className)}>
-      <RadiatingGlyph className="h-[1.2em] w-[1.2em] text-cyan" />
-      <span className="text-[1em] font-bold uppercase leading-none tracking-[0.28em] text-white">
-        Radix
-      </span>
-    </span>
-  );
+/**
+ * The landing wordmark is the console's brandmark, not a second logo: one
+ * identity across `/` and `/app` so the Launch App transition reads as the
+ * same product rather than a handoff. Sizes are px because the shared mark
+ * scales its dial and type together.
+ */
+function Wordmark({ size = 34, className }: { size?: number; className?: string }) {
+  return <Brandmark size={size} className={className} />;
 }
 
 /* Glyphs - 24×24 stroke icons, currentColor so the accent wrapper tints them. */

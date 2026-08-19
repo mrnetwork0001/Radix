@@ -671,3 +671,115 @@ export function MetaRow({
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Brandmark
+// ---------------------------------------------------------------------------
+
+/** Fixed blip positions, in the radar's own 100x100 user space. */
+const BLIPS: ReadonlyArray<{ x: number; y: number; delay: string }> = [
+  { x: 66, y: 36, delay: '0s' },
+  { x: 34, y: 62, delay: '0.9s' },
+  { x: 58, y: 68, delay: '1.7s' },
+];
+
+/**
+ * A 60 degree wedge swept about the dial. Always cyan: the radar is identity
+ * chrome, not an alarm surface (alert state lives in the ALERTS tile alone).
+ *
+ * `transform-box: view-box` is load-bearing: the default `border-box` would
+ * resolve `transform-origin` against the wedge's own bounding box, so the
+ * sweep would orbit its own corner instead of the centre of the dial.
+ */
+export function RadarSweep({ size }: { size: number }) {
+  const tone = 'var(--cyan-rgb)';
+  const spin = { transformBox: 'view-box', transformOrigin: '50px 50px' } as const;
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      className="shrink-0"
+      aria-hidden="true"
+    >
+      <defs>
+        <radialGradient id="radix-radar-face" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={`rgb(${tone} / 0.14)`} />
+          <stop offset="100%" stopColor={`rgb(${tone} / 0.02)`} />
+        </radialGradient>
+        <linearGradient id="radix-radar-wedge" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor={`rgb(${tone} / 0.55)`} />
+          <stop offset="100%" stopColor={`rgb(${tone} / 0)`} />
+        </linearGradient>
+      </defs>
+
+      <circle cx="50" cy="50" r="46" fill="url(#radix-radar-face)" />
+
+      {/* Range rings + crosshair. */}
+      {[46, 34, 22, 11].map((r) => (
+        <circle key={r} cx="50" cy="50" r={r} stroke={`rgb(${tone} / 0.22)`} strokeWidth="0.8" />
+      ))}
+      <path
+        d="M4 50h92M50 4v92"
+        stroke={`rgb(${tone} / 0.16)`}
+        strokeWidth="0.8"
+        strokeDasharray="2 4"
+      />
+
+      {/* The sweep itself: wedge + a bright leading edge, rotating together. */}
+      <g className="animate-scan-sweep" style={spin}>
+        <path d="M50 50 L96 50 A46 46 0 0 0 73 10.2 Z" fill="url(#radix-radar-wedge)" />
+        <path d="M50 50 L96 50" stroke={`rgb(${tone} / 0.9)`} strokeWidth="1.1" />
+      </g>
+
+      {BLIPS.map((blip) => (
+        <circle
+          key={`${blip.x}-${blip.y}`}
+          cx={blip.x}
+          cy={blip.y}
+          r="2.2"
+          fill={`rgb(${tone} / 1)`}
+          className="animate-breathe"
+          style={{ animationDelay: blip.delay }}
+        />
+      ))}
+
+      <circle cx="50" cy="50" r="46" stroke={`rgb(${tone} / 0.35)`} strokeWidth="1" />
+    </svg>
+  );
+}
+
+export interface BrandmarkProps {
+  /** Dial diameter in px; the wordmark scales alongside it. */
+  size?: number;
+  /**
+   * Element for the wordmark text. The console passes `h1` (it is that page's
+   * heading); the landing leaves it a span, where the hero owns the h1.
+   */
+  as?: ElementType;
+  className?: string;
+}
+
+/**
+ * The one Radix identity: swept radar dial plus the gradient wordmark. Shared
+ * so the landing header, the landing footer and the console command bar cannot
+ * drift into three different logos.
+ */
+export function Brandmark({ size = 40, as: Text = 'span', className }: BrandmarkProps) {
+  return (
+    <span className={cx('flex items-center gap-3', className)}>
+      <RadarSweep size={size} />
+      <Text
+        className={cx(
+          'bg-gradient-to-r from-cyan via-white to-violet bg-clip-text',
+          'font-bold leading-none tracking-[0.3em] text-transparent',
+        )}
+        style={{ fontSize: Math.round(size * 0.45) }}
+      >
+        RADIX
+      </Text>
+    </span>
+  );
+}
