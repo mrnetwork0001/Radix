@@ -29,6 +29,7 @@ from pathlib import Path
 
 import requests
 
+from . import paths
 from .model import MaintainerInfo, PackageMeta
 
 __all__ = ["NpmRegistry"]
@@ -37,7 +38,9 @@ _REGISTRY_URL = "https://registry.npmjs.org"
 _DOWNLOADS_URL = "https://api.npmjs.org/downloads/point/last-week"
 
 # backend/app/ingest/registry.py -> repo root is three levels up.
-_DEFAULT_CACHE_DIR = Path(__file__).resolve().parents[3] / "data" / "cache" / "registry"
+#: Resolved lazily by :mod:`app.ingest.paths`, which handles both the repo
+#: and image layouts and degrades to a temp dir when the target is not writable.
+_CACHE_NAME = "registry"
 
 _TIMEOUT_S = 15.0
 _RETRIES = 3
@@ -115,8 +118,11 @@ class NpmRegistry:
     """Client for registry.npmjs.org metadata and api.npmjs.org downloads."""
 
     def __init__(self, cache_dir: Path | None = None, user_agent: str = "radix-ingest"):
-        self.cache_dir = Path(cache_dir) if cache_dir is not None else _DEFAULT_CACHE_DIR
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        if cache_dir is not None:
+            self.cache_dir = Path(cache_dir)
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            self.cache_dir = paths.cache_dir(_CACHE_NAME)
         self._session = requests.Session()
         self._session.headers.update(
             {

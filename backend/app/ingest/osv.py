@@ -28,6 +28,7 @@ from typing import Iterable
 
 import requests
 
+from . import paths
 from .model import Advisory
 
 __all__ = ["OsvClient"]
@@ -35,7 +36,9 @@ __all__ = ["OsvClient"]
 _OSV_API = "https://api.osv.dev/v1"
 
 # backend/app/ingest/osv.py -> repo root is three levels up.
-_DEFAULT_CACHE_DIR = Path(__file__).resolve().parents[3] / "data" / "cache" / "osv"
+#: Resolved lazily by :mod:`app.ingest.paths`, which handles both the repo
+#: and image layouts and degrades to a temp dir when the target is not writable.
+_CACHE_NAME = "osv"
 
 _TIMEOUT_S = 15.0
 _RETRIES = 3
@@ -169,8 +172,11 @@ class OsvClient:
     """Client for api.osv.dev with a disk cache for hydrated records."""
 
     def __init__(self, cache_dir: Path | None = None, user_agent: str = "radix-ingest"):
-        self.cache_dir = Path(cache_dir) if cache_dir is not None else _DEFAULT_CACHE_DIR
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        if cache_dir is not None:
+            self.cache_dir = Path(cache_dir)
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            self.cache_dir = paths.cache_dir(_CACHE_NAME)
         self._session = requests.Session()
         self._session.headers.update({"User-Agent": user_agent, "Accept": "application/json"})
 
