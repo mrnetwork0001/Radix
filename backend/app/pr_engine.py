@@ -210,7 +210,22 @@ def _clone(repo_target: str, dest: Path) -> None:
             match = re.match(r"^https://github\.com/([^/]+/[^/]+?)(?:\.git)?/?$", repo_target)
             if not match:
                 raise
-            _git(["clone", "--depth", "1", f"git@github.com:{match.group(1)}.git", str(dest)], dest.parent)
+            try:
+                _git(
+                    ["clone", "--depth", "1", f"git@github.com:{match.group(1)}.git", str(dest)],
+                    dest.parent,
+                )
+            except PrEngineError as ssh_error:
+                # Both anonymous https and ssh failed. The usual causes are a
+                # repository that does not exist (the seeded demo world points
+                # at a fictional org) or a private one this host cannot read -
+                # say so plainly instead of surfacing git's fork/transport noise.
+                raise PrEngineError(
+                    f"cannot reach the repository {repo_target!r}. It may not exist, or it "
+                    "may be private to this host. Ingest a repository you control "
+                    "(ADD REPO, or scripts/ingest.py) to open a patch against real code. "
+                    f"[{ssh_error}]"
+                ) from None
         if not (dest / ".git").exists():
             raise PrEngineError("clone produced no git repository")
         return

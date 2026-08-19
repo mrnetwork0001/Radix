@@ -42,6 +42,12 @@ export interface PatchModalProps {
   prLoading?: boolean;
   /** The engine's response once it lands; replaces the rendered diff. */
   prResult?: OpenPrResponse | null;
+  /**
+   * Failure text from `POST /api/open-pr`. Kept separate from `prResult` so a
+   * failed attempt annotates the modal instead of replacing the generated
+   * patch the user is reading.
+   */
+  prError?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -263,7 +269,7 @@ function PrResultStrip({ result }: { result: OpenPrResponse }) {
 // Modal
 // ---------------------------------------------------------------------------
 
-export function PatchModal({ patch, open, onClose, onOpenPr, prLoading, prResult }: PatchModalProps) {
+export function PatchModal({ patch, open, onClose, onOpenPr, prLoading, prResult, prError }: PatchModalProps) {
   const titleId = useId();
   const active = open && patch !== null;
 
@@ -383,6 +389,13 @@ export function PatchModal({ patch, open, onClose, onOpenPr, prLoading, prResult
         {/* --- Body ------------------------------------------------------ */}
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
           {prResult ? <PrResultStrip result={prResult} /> : null}
+
+          {prError ? (
+            <div className="rounded-lg border border-alert/40 bg-alert/10 px-3 py-2">
+              <div className="label-micro mb-1 text-alert">branch not created</div>
+              <p className="text-2xs leading-relaxed text-ink-muted">{prError}</p>
+            </div>
+          ) : null}
 
           {current ? (
             <>

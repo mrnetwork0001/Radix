@@ -44,6 +44,7 @@ export default function App() {
   // Mobile mission-controls drawer; irrelevant at lg+ where the rail is fixed.
   const [controlsOpen, setControlsOpen] = useState(false);
   const [prResult, setPrResult] = useState<OpenPrResponse | null>(null);
+  const [prError, setPrError] = useState<string | null>(null);
   const [standaloneSquats, setStandaloneSquats] = useState<TyposquatCandidate[] | null>(null);
 
   const graph = useGraphData();
@@ -197,6 +198,7 @@ export default function App() {
     if (!service || packageId === undefined) return;
 
     setPrLoading(true);
+    setPrError(null);
     try {
       const result = await api.openPr({
         package_id: packageId,
@@ -209,17 +211,10 @@ export default function App() {
       });
       setPrResult(result);
     } catch (error) {
+      // Deliberately not a synthetic prResult: an empty diff would replace the
+      // generated patch on screen, which is the one thing the user is looking at.
       if (!isAbortError(error)) {
-        setPrResult({
-          mode: 'dry-run',
-          repo: '',
-          branch: '',
-          base: '',
-          diff: '',
-          overrides: {},
-          regenerated: false,
-          message: error instanceof Error ? error.message : 'open-pr failed',
-        });
+        setPrError(error instanceof Error ? error.message : 'open-pr failed');
       }
     } finally {
       setPrLoading(false);
@@ -356,10 +351,12 @@ export default function App() {
           setPatchOpen(false);
           setPatch(null);
           setPrResult(null);
+          setPrError(null);
         }}
         onOpenPr={() => void handleOpenPr()}
         prLoading={prLoading}
         prResult={prResult}
+        prError={prError}
       />
     </div>
   );
