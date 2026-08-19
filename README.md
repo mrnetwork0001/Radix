@@ -20,6 +20,9 @@
 
 </div>
 
+<img width="1415" height="850" alt="Screenshot 2026-08-19 at 22 14 03" src="https://github.com/user-attachments/assets/58f17d4b-3255-47f7-b57d-b694b11cde28" />
+
+
 ---
 
 ## The problem
