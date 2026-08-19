@@ -88,12 +88,7 @@ function LaunchButton({
           'transition-transform duration-700 ease-swift group-hover:translate-x-[300%]',
         )}
       />
-      <span className="relative flex items-center gap-2">
-        LAUNCH APP
-        <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-0.5">
-          →
-        </span>
-      </span>
+      <span className="relative flex items-center">LAUNCH APP</span>
     </button>
   );
 }
