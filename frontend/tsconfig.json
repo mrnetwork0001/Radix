@@ -6,7 +6,7 @@
     "module": "ESNext",
     "skipLibCheck": true,
 
-    /* Bundler mode — Vite owns emit. */
+    /* Bundler mode - Vite owns emit. */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
@@ -24,7 +24,7 @@
     "exactOptionalPropertyTypes": false,
     "forceConsistentCasingInFileNames": true,
 
-    /* Path alias — mirrors the `@` alias in vite.config.ts. */
+    /* Path alias - mirrors the `@` alias in vite.config.ts. */
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]

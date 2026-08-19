@@ -1,6 +1,6 @@
 """Live verification for NpmRegistry and OsvClient.
 
-These tests hit the real registry.npmjs.org, api.npmjs.org and api.osv.dev —
+These tests hit the real registry.npmjs.org, api.npmjs.org and api.osv.dev -
 per the ingest contract, first proof is against the real thing, not fixtures.
 They need the network, and populate the real disk caches under
 ``data/cache/{registry,osv}/`` (that is the point of test 6).
@@ -82,8 +82,8 @@ def test_event_stream_incident():
     """The 2018 event-stream incident must surface, MAL- handling included.
 
     The GHSA record spans BOTH event-stream and flatmap-stream, so this also
-    proves (a) dedupe across packages — the shared id is hydrated once — and
-    (b) the affected[] filter — its versions are event-stream's 3.3.6, not
+    proves (a) dedupe across packages - the shared id is hydrated once - and
+    (b) the affected[] filter - its versions are event-stream's 3.3.6, not
     flatmap-stream's 0.1.1.
     """
     osv = OsvClient()
@@ -167,7 +167,7 @@ if __name__ == "__main__":
         except AssertionError as exc:
             failures += 1
             print(f"[FAIL ] {test.__name__}: {exc}")
-        except Exception as exc:  # noqa: BLE001 — a live test must name what broke
+        except Exception as exc:  # noqa: BLE001 - a live test must name what broke
             failures += 1
             print(f"[ERROR] {test.__name__}: {type(exc).__name__}: {exc}")
         else:

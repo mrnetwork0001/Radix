@@ -1,4 +1,4 @@
-# Radix — one-command development stack.
+# Radix - one-command development stack.
 #
 # HydraDB runs in Docker (see docker-compose.yml); the FastAPI backend and the
 # Vite frontend run as local processes so reloads stay instant.
@@ -61,10 +61,10 @@ LIVE_NAMESPACE ?= radix/live
 
 .PHONY: help up wait-ready seed backend frontend dev down clean verify \
         venv install install-backend install-frontend logs ps restart \
-        ingest osv-sync sentinel live-backend
+        ingest osv-sync sentinel live-backend check-claims
 
 help: ## Show this help
-	@printf '\nRadix — make targets\n\n'
+	@printf '\nRadix - make targets\n\n'
 	@grep -hE '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) \
 		| sort \
 		| awk 'BEGIN { FS = ":.*## " } { printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2 }'
@@ -74,7 +74,7 @@ help: ## Show this help
 
 up: ## Start HydraDB and block until /readyz answers
 	@test -f "$(TOKEN_FILE)" || { \
-		printf 'missing %s — compose bind-mounts it and Docker would create a directory in its place\n' '$(TOKEN_FILE)' >&2; \
+		printf 'missing %s - compose bind-mounts it and Docker would create a directory in its place\n' '$(TOKEN_FILE)' >&2; \
 		exit 1; \
 	}
 	@$(COMPOSE) up -d --remove-orphans
@@ -122,14 +122,14 @@ install-backend: venv ## Install backend Python dependencies
 	@if [ -f "$(BACKEND_DIR)/requirements.txt" ]; then \
 		"$(VENV_PY)" -m pip install --quiet -r "$(BACKEND_DIR)/requirements.txt"; \
 	else \
-		printf 'no backend/requirements.txt yet — skipping\n'; \
+		printf 'no backend/requirements.txt yet - skipping\n'; \
 	fi
 
 install-frontend: ## Install frontend npm dependencies
 	@if [ -f "$(FRONTEND_DIR)/package.json" ]; then \
 		cd "$(FRONTEND_DIR)" && npm install --no-fund --no-audit; \
 	else \
-		printf 'no frontend/package.json yet — skipping\n'; \
+		printf 'no frontend/package.json yet - skipping\n'; \
 	fi
 
 install: install-backend install-frontend ## Install all dependencies
@@ -176,8 +176,11 @@ clean: ## Stop HydraDB, drop its volumes, and remove local build artefacts
 	@find "$(RADIX_ROOT)" -name __pycache__ -type d -prune -exec rm -rf {} + 2>/dev/null || true
 	@printf 'clean\n'
 
+check-claims: ## Verify every number quoted in the README against a running Radix
+	@"$(PYTHON)" "$(RADIX_ROOT)/scripts/check_claims.py" $(if $(TARGET),--target "$(TARGET)",)
+
 verify: ## Check the compose file, the auth token, and a live query round-trip
-	@printf '\nRadix — stack verification\n\n'
+	@printf '\nRadix - stack verification\n\n'
 	@$(COMPOSE) config --quiet
 	@printf '  ok    docker-compose.yml parses\n'
 	@token=$$(tr -d '\n' < "$(TOKEN_FILE)"); \
@@ -193,7 +196,7 @@ verify: ## Check the compose file, the auth token, and a live query round-trip
 	printf '  ok    token matches .env.example\n'
 	@code=$$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$(HYDRA_ADMIN_URL)/readyz" || true); \
 	if [ "$$code" != "200" ]; then \
-		printf '  FAIL  %s/readyz returned %s — run `make up`\n' '$(HYDRA_ADMIN_URL)' "$$code" >&2; \
+		printf '  FAIL  %s/readyz returned %s - run `make up`\n' '$(HYDRA_ADMIN_URL)' "$$code" >&2; \
 		exit 1; \
 	fi; \
 	printf '  ok    %s/readyz -> 200\n' '$(HYDRA_ADMIN_URL)'
@@ -209,6 +212,6 @@ verify: ## Check the compose file, the auth token, and a live query round-trip
 	packages=$$(sed -n 's/.*"value":\([0-9][0-9]*\).*/\1/p' <<< "$$body"); \
 	printf '  ok    authenticated query round-trip -> %s Package nodes\n' "$${packages:-0}"; \
 	if [ "$${packages:-0}" -lt 2 ]; then \
-		printf '\n  note  graph looks unseeded — run `make seed`\n'; \
+		printf '\n  note  graph looks unseeded - run `make seed`\n'; \
 	fi
 	@printf '\n'

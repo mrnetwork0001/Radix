@@ -4,8 +4,8 @@ Runs against the real engine, never against namespace ``radix``.
 
 NAMESPACE NOTE (discovered by live probe, 2026-08-16): the deployed bearer
 token's authorisation is *prefix-scoped*. The literal namespace ``radix-test``
-is rejected outright — ``permission_denied: principal bearer principal is not
-authorized to read graph scope radix-test/graphs/default`` — and fixing that
+is rejected outright - ``permission_denied: principal bearer principal is not
+authorized to read graph scope radix-test/graphs/default`` - and fixing that
 would mean editing the token file and restarting the live container. The
 sub-namespace ``radix/test`` *is* authorised and fully isolated from ``radix``
 (verified: writes there are invisible to the demo namespace), so it serves as
@@ -201,7 +201,7 @@ def _package_id(writer: GraphWriter, name: str) -> int:
 
 
 def _ingested(client: HydraClient) -> tuple[GraphWriter, IngestReport]:
-    """Fresh wipe + one full ingest — shared setup for the read-back tests."""
+    """Fresh wipe + one full ingest - shared setup for the read-back tests."""
     _wipe(client)
     writer = GraphWriter(client)
     report = writer.ingest(_build_scan(), _build_meta(), [_mal_advisory()])
@@ -498,7 +498,7 @@ if __name__ == "__main__":
         except AssertionError as exc:
             failures += 1
             print(f"FAIL  {test.__name__}: {exc}")
-        except Exception as exc:  # noqa: BLE001 — a runner reports, it does not raise
+        except Exception as exc:  # noqa: BLE001 - a runner reports, it does not raise
             failures += 1
             print(f"ERROR {test.__name__}: {type(exc).__name__}: {exc}")
         else:

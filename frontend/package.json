@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Radix — graph-native software supply-chain security sentinel, powered by HydraDB.",
+  "description": "Radix - graph-native software supply-chain security sentinel, powered by HydraDB.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

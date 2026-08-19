@@ -1,10 +1,10 @@
-# Radix — HydraDB service definition.
+# Radix - HydraDB service definition.
 #
 # Only the database is containerised. The FastAPI backend and the Vite frontend
 # stay as local dev processes so edit/reload cycles are instant; `make dev`
 # orchestrates all three.
 #
-# Every setting below is transcribed from a live, verified-working node — see
+# Every setting below is transcribed from a live, verified-working node - see
 # docs/HYDRADB_CONTRACT.md §1. The three annotated lines are the ones that look
 # wrong and are not.
 
@@ -19,7 +19,7 @@ services:
     # The image declares USER 10001:10001, but Docker creates named volumes
     # root-owned. As 10001 the node boots and serves /readyz perfectly happily,
     # then silently fails every heartbeat write with "object store put failed at
-    # data/_graph_nodes/v1/node-0" — a healthy-looking database that never
+    # data/_graph_nodes/v1/node-0" - a healthy-looking database that never
     # persists. Running as root is required, not a shortcut.
     user: "0:0"
 
@@ -35,7 +35,7 @@ services:
       # pre-creates a named-volume mountpoint, which is what satisfies that.
       - store:/var/lib/hydra/store
       - cache:/var/lib/hydra/cache
-      # The auth token has no env-var form — it is read from this file.
+      # The auth token has no env-var form - it is read from this file.
       - ./hydra/auth-token:/etc/hydra/auth-token:ro
 
     environment:
@@ -51,7 +51,7 @@ services:
       GRAPH_CELLS: "cell-0"
       GRAPH_DATA_PATH: "data"
 
-      # Plaintext HTTP/Bolt — local development only, never a deployed setting.
+      # Plaintext HTTP/Bolt - local development only, never a deployed setting.
       GRAPH_ALLOW_PLAINTEXT: "true"
       GRAPH_AUTH_TOKEN_FILE: "/etc/hydra/auth-token"
 
@@ -63,7 +63,7 @@ services:
       GRAPH_BOLT_ADDR: "0.0.0.0:7687"
       GRAPH_HTTP_ADDR: "0.0.0.0:8443"
       GRAPH_ADMIN_ADDR: "0.0.0.0:9090"
-      # What Bolt clients are told to reconnect to — a host-side address, so it
+      # What Bolt clients are told to reconnect to - a host-side address, so it
       # is 127.0.0.1 rather than the container's bind address.
       GRAPH_ADVERTISED_BOLT_ADDR: "127.0.0.1:7687"
 

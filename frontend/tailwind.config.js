@@ -2,7 +2,7 @@
 
 // Every colour here is a `var(--…)` reference rather than a literal, so the CSS
 // custom properties in src/index.css remain the single source of truth for the
-// palette — the canvas renderer (which cannot use Tailwind classes) reads those
+// palette - the canvas renderer (which cannot use Tailwind classes) reads those
 // same tokens through src/lib/theme.ts.
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],

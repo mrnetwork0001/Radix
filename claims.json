@@ -1,0 +1,29 @@
+{
+  "_comment": "Every number quoted in README.md, machine-checkable. scripts/check_claims.py asserts each against a running Radix. A stale claim fails the check, which is how a README stops drifting away from the product.",
+  "target": "https://www.useradix.xyz",
+  "breach": { "package_name": "tanstack-query", "depth": 6 },
+  "claims": [
+    { "id": "graph.nodes",            "where": "README Measured results", "expect": 502,  "op": "eq" },
+    { "id": "graph.edges_api",        "where": "README Measured results", "expect": 1975, "op": "eq" },
+    { "id": "graph.packages",         "where": "README Measured results", "expect": 390,  "op": "eq" },
+    { "id": "graph.services",         "where": "README track questions",  "expect": 20,   "op": "eq" },
+    { "id": "graph.lockfiles",        "where": "README track questions",  "expect": 10,   "op": "eq" },
+    { "id": "blast.exposed_services", "where": "README + video script",   "expect": 7,    "op": "eq" },
+    { "id": "blast.percentage",       "where": "README + video script",   "expect": 35.0, "op": "eq" },
+    { "id": "blast.tier1",            "where": "README Measured results", "expect": 3,    "op": "eq" },
+    { "id": "blast.exposed_lockfiles","where": "README track questions",  "expect": 4,    "op": "eq" },
+    { "id": "closure.packages",       "where": "README Measured results", "expect": 22,   "op": "eq" },
+    { "id": "closure.paths",          "where": "README Measured results", "expect": 80,   "op": "eq" },
+    { "id": "closure.longest_path",   "where": "README Measured results", "expect": 7,    "op": "eq" },
+    { "id": "closure.latency_ms",     "where": "README ~17 ms warm",      "expect": 60,   "op": "lte",
+      "note": "a ceiling, not a point estimate: latency varies with host load, so the claim is that the traversal stays well inside interactive range" },
+    { "id": "precision.mode",         "where": "README version-exact",    "expect": "version", "op": "eq" },
+    { "id": "precision.pruned",       "where": "README Measured results", "expect": 2,    "op": "eq" },
+    { "id": "precision.excluded_names", "where": "README names them",     "expect": ["svelte-query-shim", "vue-query-shim"], "op": "eq" },
+    { "id": "depth8.exposed_services","where": "README depth 8 finds 9",  "expect": 9,    "op": "eq" },
+    { "id": "maintainer.sisters_in_window", "where": "README + video",    "expect": 3,    "op": "eq" },
+    { "id": "typosquats.count",       "where": "README + video",          "expect": 6,    "op": "eq" },
+    { "id": "fix.safe_version",       "where": "README + video",          "expect": "4.27.6", "op": "eq" },
+    { "id": "fix.patched_services",   "where": "README remediation",      "expect": 4,    "op": "eq" }
+  ]
+}
