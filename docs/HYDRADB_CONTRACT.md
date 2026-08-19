@@ -1,4 +1,4 @@
-# HydraDB Contract — Empirically Verified
+# HydraDB Contract - Empirically Verified
 
 > Every statement below was **verified by live probe** against
 > `ghcr.io/hydra-db/hydradb:latest` (digest `db78309a233b`) on 2026-08-13.
@@ -6,7 +6,7 @@
 > listed here, probe it first with `curl` before writing code against it.
 
 HydraDB is an **object-store-native distributed graph database** written in Rust.
-It speaks a **deliberate subset of OpenCypher** — not the whole language. Queries
+It speaks a **deliberate subset of OpenCypher** - not the whole language. Queries
 outside the subset are rejected at *parse time* with a clear reason, which is why
 the constraints below are hard requirements rather than style preferences.
 
@@ -27,7 +27,7 @@ Two non-obvious requirements, both discovered the hard way:
    `UnableToCanonicalize { path: ..., NotFound }`. Docker auto-creates a
    named-volume mountpoint, so mounting directly at the store path satisfies this.
 
-`RUST_MIN_STACK=33554432` is also mandatory — the async query futures exceed the
+`RUST_MIN_STACK=33554432` is also mandatory - the async query futures exceed the
 default thread stack, and without it the node accepts connections and then dies
 with a stack overflow on the **first query**.
 
@@ -48,7 +48,7 @@ Request body (from `src/client/http.rs::HttpQueryRequestBody`):
 ```jsonc
 {
   "cell_id":    "cell-0",   // REQUIRED
-  "query":      "MATCH ...",// REQUIRED — exactly ONE statement
+  "query":      "MATCH ...",// REQUIRED - exactly ONE statement
   "parameters": {},          // $name params; may hold a list-of-maps for UNWIND
   "timeout_ms": 30000,
   "page_size":  1024,
@@ -57,7 +57,7 @@ Request body (from `src/client/http.rs::HttpQueryRequestBody`):
 }
 ```
 
-Response — **values are type-tagged and must be unwrapped**:
+Response - **values are type-tagged and must be unwrapped**:
 
 ```jsonc
 {
@@ -81,8 +81,8 @@ MATCH (b)-[:DEPENDS_ON*1..3]->(a {id:4})
 **Variable-length traversal only runs forward from a fixed source id.** You
 cannot anchor a variable-length pattern at its *target*.
 
-Radix's core feature is the **reverse** transitive closure — *who transitively
-depends on this compromised package* — which is exactly the rejected shape.
+Radix's core feature is the **reverse** transitive closure - *who transitively
+depends on this compromised package* - which is exactly the rejected shape.
 
 ### Resolution: materialised inverse edges
 
@@ -98,7 +98,7 @@ Verified: returns the complete closure `{1,2,3}` over a 3-hop chain. This costs
 2× edge storage and is the standard modelling answer for a direction-restricted
 engine. **All reverse/blast-radius traversal must use `DEPENDED_ON_BY`.**
 
-Note the maximum in `*1..N` is **required** — `*` and `*1..` are both rejected,
+Note the maximum in `*1..N` is **required** - `*` and `*1..` are both rejected,
 because unbounded traversal has no predictable cost on a large graph.
 
 ## 4. Writing data (the seeding contract)
@@ -106,7 +106,7 @@ because unbounded traversal has no predictable cost on a large graph.
 Nodes are keyed by a **non-negative integer `id`**. Names are properties, so the
 seeder owns a deterministic integer ID space (see `backend/app/schema.py`).
 
-**Node upsert** — `MERGE` by id, then `SET`. Folding extra properties into the
+**Node upsert** - `MERGE` by id, then `SET`. Folding extra properties into the
 `MERGE` pattern is rejected, because the pattern *is* the identity being matched:
 
 ```cypher
@@ -115,7 +115,7 @@ MERGE (n {id: row.vertex})
 SET n:Package, n.name = row.name, n.risk_score = row.risk_score
 ```
 
-**Edge create** — two rules, both found by probe:
+**Edge create** - two rules, both found by probe:
 
 - each endpoint needs **exactly one label**
   (`UNWIND MATCH CREATE endpoints require exactly one label`)
@@ -137,9 +137,9 @@ MERGE (s)-[r:DEPENDS_ON {id: row.eid}]->(d)
 SET r.constraint = row.constraint
 ```
 
-Cross-label edges (`Service`→`Package`) work fine — the rule is one label *each*.
+Cross-label edges (`Service`→`Package`) work fine - the rule is one label *each*.
 
-## 5. Reading — what works and what does not
+## 5. Reading - what works and what does not
 
 | Works | Rejected |
 |---|---|
@@ -160,13 +160,13 @@ Two consequences worth stating plainly:
   split, not a workaround.
 - **No string functions**, so Levenshtein/homoglyph analysis cannot run in
   Cypher. Typosquat edges are computed at seed time and stored as
-  `TYPOSQUAT_OF` with `edit_distance` / `similarity_score` properties — the
+  `TYPOSQUAT_OF` with `edit_distance` / `similarity_score` properties - the
   traversal then just reads them back.
 
 ## 6. Path extraction for the visualiser
 
-A plain `MATCH` projects endpoints, not routes. To get whole **paths** — needed
-to animate infection routes through the graph — use the native procedures:
+A plain `MATCH` projects endpoints, not routes. To get whole **paths** - needed
+to animate infection routes through the graph - use the native procedures:
 
 ```cypher
 CALL algo.SSpaths({sourceNode: $id, relTypes: ['DEPENDED_ON_BY'],
@@ -176,7 +176,7 @@ YIELD path RETURN path
 
 Verified to return every path from the source (1-hop, 2-hop, 3-hop …), each with
 full node labels/properties and relationship `src`/`dst`/`edge_type`/properties.
-`pathCount` defaults low — **set it explicitly** or you get a single path.
+`pathCount` defaults low - **set it explicitly** or you get a single path.
 
 `relDirection` accepts `'incoming'` / `'both'`, which traverses `DEPENDS_ON`
 backwards. Both routes work; Radix prefers the `DEPENDED_ON_BY` inverse edge so
@@ -189,7 +189,7 @@ Procedures: `algo.SPpaths` (source→target), `algo.SSpaths` (one source),
 ### Path value encoding (verified)
 
 Inside a `path` value, properties use a **different, inner encoding** from the
-outer type-tagged row values — a single-key wrapper named after the Rust variant:
+outer type-tagged row values - a single-key wrapper named after the Rust variant:
 
 ```jsonc
 {"nodes": [
@@ -203,7 +203,7 @@ outer type-tagged row values — a single-key wrapper named after the Rust varia
 
 Two traps here:
 
-- the boolean tag is **`Bool`**, not `Boolean` — unlike the outer row encoding,
+- the boolean tag is **`Bool`**, not `Boolean` - unlike the outer row encoding,
   which spells the same type `boolean`. A flattener written against the outer
   tag names will silently drop booleans.
 - a relationship's `"id"` field is HydraDB's **internal** edge id (`10`), which

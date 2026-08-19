@@ -29,7 +29,7 @@ git checkout. Skips `node_modules/` entirely.
 def discover_lockfiles(root: Path) -> list[Path]     # package-lock.json, yarn.lock, pnpm-lock.yaml
 def parse_lockfile(path: Path, repo_root: Path) -> ParsedLockfile
 ```
-Must handle: package-lock v2/v3 (the `packages` map — derive per-package
+Must handle: package-lock v2/v3 (the `packages` map - derive per-package
 `DepEdge`s from each entry's `dependencies` field), v1 (nested `dependencies`),
 yarn.lock v1 (the `name@range:` block format), pnpm-lock v6/v9 (YAML,
 `importers` + `packages`). Root-manifest deps become edges with
@@ -42,7 +42,7 @@ class NpmRegistry:
     def get_meta(self, name: str) -> PackageMeta | None       # registry.npmjs.org/{name}
     def fill_downloads(self, metas: dict[str, PackageMeta]) -> None
 ```
-- Full metadata doc (not the abbreviated corgi format — it lacks the `time`
+- Full metadata doc (not the abbreviated corgi format - it lacks the `time`
   map, and `published_at` is the maintainer sentinel's whole feature).
 - **Cache to disk** (`data/cache/registry/`) keyed by name, with ETag
   revalidation; a re-run must not re-download megabytes per package.
@@ -50,7 +50,7 @@ class NpmRegistry:
   comma-separated form takes up to 128 **unscoped** names per call, scoped
   names go one at a time with `@scope%2Fname` encoding.
 - Be polite: small concurrency, retry with backoff on 429/5xx, never crash the
-  pipeline on one bad package — return `None` and let the writer proceed.
+  pipeline on one bad package - return `None` and let the writer proceed.
 
 ### `backend/app/ingest/osv.py`
 ```python
@@ -75,12 +75,12 @@ class GraphWriter:
     def known_packages(self) -> dict[str, int]                      # name -> vertex id
 ```
 
-**Node identity — the graph is the id registry.** No state files. At init,
+**Node identity - the graph is the id registry.** No state files. At init,
 label-scan the namespace for existing `name -> id` per label and allocate new
 ids sequentially after the highest existing offset in each label's partition
 (see `schema._BASES`). Re-ingesting must MERGE onto the same ids.
 
-**Edge identity — deterministic hashes.** Batched relationship writes need an
+**Edge identity - deterministic hashes.** Batched relationship writes need an
 explicit id (contract §4). Derive it as
 `int.from_bytes(sha1(f"{edge_type}|{src_id}|{dst_id}").digest()[:8]) >> 2`
 (62-bit) so re-ingestion MERGEs the same edge instead of duplicating it.
@@ -100,7 +100,7 @@ Risk scores: bump per non-malicious advisory, capped; `1.0` implies malicious.
 
 Typosquat pass: Levenshtein ≤ 2 (plus homoglyph normalisation) between every
 ingested package name and the namespace's high-download names, written as
-`TYPOSQUAT_OF` edges. Skip pairs that share a scope prefix — `@types/react` is
+`TYPOSQUAT_OF` edges. Skip pairs that share a scope prefix - `@types/react` is
 not squatting `react`.
 
 ### `backend/app/semver_npm.py`
@@ -116,7 +116,7 @@ what upgrades the closure from package-level to version-level: a dependent
 whose constraint cannot resolve the compromised version is not actually
 exposed.
 
-### `sentinel/watcher.py` — the 24/7 agent
+### `sentinel/watcher.py` - the 24/7 agent
 ```python
 python -m sentinel.watcher --interval 900 [--once] [--dry-run]
 ```
@@ -134,15 +134,15 @@ reads `HYDRA_NAMESPACE` (default `radix`).
 
 **Authorization is prefix-scoped to the node's boot namespace** (verified by
 probe): with the dev container booted as `GRAPH_NAMESPACE=radix`, the token
-authorizes `radix` and `radix/...` sub-scopes only — `radix-test` and
+authorizes `radix` and `radix/...` sub-scopes only - `radix-test` and
 `radix-live` are rejected with `permission_denied`. Convention:
 
 | namespace | contents |
 |---|---|
 | `radix` | the seeded demo world (untouched by ingestion tests) |
 | `radix/live` | real ingested data, local dev |
-| `radix/test` | scratch for automated tests — safe to wipe (`RADIX_TEST_NAMESPACE` overrides) |
-| `radix-live` | production only — the prod container *boots* with this namespace, which is what authorizes it there |
+| `radix/test` | scratch for automated tests - safe to wipe (`RADIX_TEST_NAMESPACE` overrides) |
+| `radix-live` | production only - the prod container *boots* with this namespace, which is what authorizes it there |
 
 **Never `DETACH DELETE` in `radix` from ingestion code or tests.**
 
@@ -152,5 +152,5 @@ Every module is verified against the real thing before it is done: parse
 `frontend/package-lock.json` from this repo (it is real), fetch real metadata
 for real packages, run a real OSV query for a package with a famous advisory
 (`event-stream` has both GHSA and MAL records), write to `radix-test` and read
-it back. No fixtures standing in for the network on first verification —
+it back. No fixtures standing in for the network on first verification -
 fixtures are for regression, not for proof.

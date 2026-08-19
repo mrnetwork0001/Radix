@@ -5,7 +5,7 @@ this document. Backend serves on **:8000**, frontend dev server on **:5173**
 (Vite proxies `/api` → `http://localhost:8000`).
 
 All responses are JSON. All latency fields are **float milliseconds**, measured
-around the HydraDB call only — that number is shown in the UI as proof of
+around the HydraDB call only - that number is shown in the UI as proof of
 traversal speed, so it must not include FastAPI serialisation overhead.
 
 ## Core object shapes
@@ -34,7 +34,7 @@ traversal speed, so it must not include FastAPI serialisation overhead.
 }
 ```
 
-Type-specific fields are omitted when not applicable — the frontend must treat
+Type-specific fields are omitted when not applicable - the frontend must treat
 them as optional and branch on `label`.
 
 ### `GraphEdge`
@@ -55,7 +55,7 @@ them as optional and branch on `label`.
 ```
 
 `DEPENDED_ON_BY` and `MAINTAINS` are internal inverse edges and are **never**
-returned by the API — they exist only to satisfy HydraDB's forward-traversal
+returned by the API - they exist only to satisfy HydraDB's forward-traversal
 rule and would double every line in the visualiser.
 
 ### `BlastRadius`
